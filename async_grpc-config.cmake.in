@@ -15,8 +15,8 @@
 #  Usage from an external project:
 #    In your CMakeLists.txt, add these lines:
 #
-#    find_package(cartographer REQUIRED)
-#    target_link_libraries(MY_TARGET_NAME PUBLIC cartographer)
+#    find_package(async_grpc REQUIRED)
+#    target_link_libraries(MY_TARGET_NAME PUBLIC async_grpc)
 
 @PACKAGE_INIT@
 
