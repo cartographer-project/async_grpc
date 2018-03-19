@@ -19,7 +19,6 @@
 #include "async_grpc/common/make_unique.h"
 #include "glog/logging.h"
 
-
 namespace async_grpc {
 
 EventQueueThread::EventQueueThread() {

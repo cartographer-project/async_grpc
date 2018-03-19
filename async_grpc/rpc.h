@@ -21,10 +21,10 @@
 #include <queue>
 #include <unordered_set>
 
-#include "async_grpc/execution_context.h"
-#include "async_grpc/rpc_handler_interface.h"
 #include "async_grpc/common/blocking_queue.h"
 #include "async_grpc/common/mutex.h"
+#include "async_grpc/execution_context.h"
+#include "async_grpc/rpc_handler_interface.h"
 #include "google/protobuf/message.h"
 #include "grpc++/grpc++.h"
 #include "grpc++/impl/codegen/async_stream.h"

@@ -18,7 +18,6 @@
 
 #include "glog/logging.h"
 
-
 namespace async_grpc {
 namespace {
 
