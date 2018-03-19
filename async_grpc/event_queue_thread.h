@@ -20,8 +20,8 @@
 #include <memory>
 #include <thread>
 
-#include "async_grpc/rpc.h"
 #include "async_grpc/common/blocking_queue.h"
+#include "async_grpc/rpc.h"
 
 namespace async_grpc {
 

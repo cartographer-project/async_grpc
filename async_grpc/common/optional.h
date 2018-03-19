@@ -64,6 +64,6 @@ class optional {
 };
 
 }  // namespace common
-}  // namespace async_grpc 
+}  // namespace async_grpc
 
 #endif  // CPP_GRPC_COMMON_OPTIONAL_H_

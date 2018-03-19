@@ -21,7 +21,6 @@
 #include "glog/logging.h"
 #include "grpc++/impl/codegen/proto_utils.h"
 
-
 namespace async_grpc {
 
 Service::Service(const std::string& service_name,

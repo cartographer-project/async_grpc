@@ -20,7 +20,6 @@
 #include "async_grpc/retry.h"
 #include "glog/logging.h"
 
-
 namespace async_grpc {
 
 RetryStrategy CreateRetryStrategy(RetryIndicator retry_indicator,

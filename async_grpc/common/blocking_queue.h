@@ -126,6 +126,6 @@ class BlockingQueue {
 };
 
 }  // namespace common
-}  // namespace async_grpc 
+}  // namespace async_grpc
 
 #endif  // CPP_GRPC_COMMON_BLOCKING_QUEUE_H_
