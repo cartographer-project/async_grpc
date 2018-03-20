@@ -12,12 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-workspace(name = "com_github_cschuet_async_grpc")
+#  Usage from an external project:
+#    In your CMakeLists.txt, add these lines:
+#
+#    find_package(async_grpc REQUIRED)
+#    target_link_libraries(MY_TARGET_NAME PUBLIC async_grpc)
 
-load("//:bazel/repositories.bzl", "repositories")
+@PACKAGE_INIT@
 
-repositories()
+set_and_check(ASYNC_GRPC_CMAKE_DIR "@PACKAGE_ASYNC_GRPC_CMAKE_DIR@")
 
-load("@com_github_grpc_grpc//bazel:grpc_deps.bzl", "grpc_deps")
-
-grpc_deps()
+include("${ASYNC_GRPC_CMAKE_DIR}/AsyncGrpcTargets.cmake")

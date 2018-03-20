@@ -12,12 +12,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-workspace(name = "com_github_cschuet_async_grpc")
+FROM ubuntu:trusty
 
-load("//:bazel/repositories.bzl", "repositories")
+# Install debs for cmake build
+COPY scripts/install_debs_cmake.sh scripts/
+RUN scripts/install_debs_cmake.sh && rm -rf /var/lib/apt/lists/*
 
-repositories()
+# Install proto3
+COPY scripts/install_proto3.sh scripts/
+RUN scripts/install_proto3.sh && rm -rf protobuf
 
-load("@com_github_grpc_grpc//bazel:grpc_deps.bzl", "grpc_deps")
+# Install gRPC
+COPY scripts/install_grpc.sh scripts/
+RUN scripts/install_grpc.sh && rm -rf grpc
 
-grpc_deps()
+# Compile and install
+COPY scripts/install_async_grpc_cmake.sh scripts/
+COPY . async_grpc 
+RUN scripts/install_async_grpc_cmake.sh && rm -rf async_grpc 

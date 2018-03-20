@@ -1,3 +1,5 @@
+#!/bin/sh
+
 # Copyright 2018 The Cartographer Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,12 +14,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-workspace(name = "com_github_cschuet_async_grpc")
+set -o errexit
+set -o verbose
 
-load("//:bazel/repositories.bzl", "repositories")
-
-repositories()
-
-load("@com_github_grpc_grpc//bazel:grpc_deps.bzl", "grpc_deps")
-
-grpc_deps()
+# Build and install Cartographer.
+cd async_grpc 
+mkdir build
+cd build
+cmake .. -G Ninja
+ninja
+CTEST_OUTPUT_ON_FAILURE=1 ninja test
+sudo ninja install

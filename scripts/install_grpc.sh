@@ -1,3 +1,5 @@
+#!/bin/sh
+
 # Copyright 2018 The Cartographer Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,12 +14,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-workspace(name = "com_github_cschuet_async_grpc")
+set -o errexit
+set -o verbose
 
-load("//:bazel/repositories.bzl", "repositories")
+VERSION="v1.10.0"
+# Digest: 474c5950686e3962bd339c93d27e369bf64f568f
 
-repositories()
-
-load("@com_github_grpc_grpc//bazel:grpc_deps.bzl", "grpc_deps")
-
-grpc_deps()
+# Build and install gRPC.
+git clone --branch ${VERSION} --depth 1 https://github.com/grpc/grpc
+cd grpc
+git submodule update --init
+make
+sudo make install
