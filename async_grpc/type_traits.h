@@ -63,14 +63,12 @@
         sizeof(check<Derived>(0)) == sizeof(std::uint8_t); \
   };
 
-#define DEFINE_HANDLER_SIGNATURE(                                   \
-		traitsName, incomingType, outgoingType, methodName) \
-  struct traitsName {                                               \
-    using IncomingType = incomingType;                              \
-    using OutgoingType = outgoingType;                              \
-    static const char* MethodName() {                               \
-      return methodName;                                            \
-    }                                                               \
+#define DEFINE_HANDLER_SIGNATURE(traitsName, incomingType, outgoingType, \
+                                 methodName)                             \
+  struct traitsName {                                                    \
+    using IncomingType = incomingType;                                   \
+    using OutgoingType = outgoingType;                                   \
+    static const char* MethodName() { return methodName; }               \
   };
 
 namespace async_grpc {
