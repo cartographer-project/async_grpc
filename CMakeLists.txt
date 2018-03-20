@@ -142,7 +142,6 @@ install(
 )
 
 foreach(HDR ${INSTALL_SOURCE_HDRS})
-  message(${HDR})
   get_filename_component(DIR ${HDR} DIRECTORY)
   install(
     FILES ${HDR}
@@ -150,9 +149,7 @@ foreach(HDR ${INSTALL_SOURCE_HDRS})
   )
 endforeach()
 
-message("LALA")
 foreach(HDR ${INSTALL_GENERATED_HDRS})
-  message(${HDR})
   get_filename_component(DIR ${HDR} DIRECTORY)
   install(
     FILES ${HDR}
