@@ -63,8 +63,6 @@ set(ALL_TESTS
     async_grpc/server_test.cc
     async_grpc/type_traits_test.cc)
 
-set(INSTALL_SOURCE_HDRS ${ALL_LIBRARY_HDRS})
-
 set(ALL_PROTOS
     async_grpc/proto/math_service.proto)
 
@@ -89,10 +87,8 @@ foreach(RELATIVEPATH ${ALL_PROTOS})
   )
 endforeach()
 set_source_files_properties(${ALL_PROTO_SRCS} ${ALL_PROTO_HDRS} PROPERTIES GENERATED TRUE)
-list(APPEND ALL_LIBRARY_HDRS ${ALL_PROTO_HDRS})
-list(APPEND ALL_LIBRARY_SRCS ${ALL_PROTO_SRCS})
 
-add_library(${PROJECT_NAME} ${ALL_LIBRARY_HDRS} ${ALL_LIBRARY_SRCS})
+add_library(${PROJECT_NAME} ${ALL_LIBRARY_HDRS} ${ALL_LIBRARY_SRCS} ${ALL_PROTO_HDRS} ${ALL_PROTO_SRCS})
 
 foreach(RELATIVEPATH ${ALL_TESTS})
   get_filename_component(DIR ${RELATIVEPATH} DIRECTORY)
@@ -100,6 +96,7 @@ foreach(RELATIVEPATH ${ALL_TESTS})
   # Replace slashes as required for CMP0037.
   string(REPLACE "/" "." TEST_TARGET_NAME "${DIR}/${FILENAME}")
   google_test("${TEST_TARGET_NAME}" ${RELATIVEPATH})
+  target_link_libraries(${TEST_TARGET_NAME} PUBLIC ${GMOCK_LIBRARY})
   target_link_libraries("${TEST_TARGET_NAME}" PUBLIC grpc++)
 endforeach()
 
@@ -111,6 +108,8 @@ target_include_directories(${PROJECT_NAME} SYSTEM PUBLIC
 # TODO(hrapp): This should not explicitly list pthread and use
 # PROTOBUF_LIBRARIES, but that failed on first try.
 target_link_libraries(${PROJECT_NAME} PUBLIC ${PROTOBUF_LIBRARY} pthread)
+
+# TODO(cschuet): Write FindGRPC.cmake
 target_link_libraries(${PROJECT_NAME} PUBLIC grpc++)
 
 target_include_directories(${PROJECT_NAME} PUBLIC
@@ -121,7 +120,6 @@ target_include_directories(${PROJECT_NAME} PUBLIC
 
 target_include_directories(${PROJECT_NAME} SYSTEM PRIVATE
   "${GMOCK_INCLUDE_DIRS}")
-target_link_libraries(${PROJECT_NAME} PRIVATE ${GMOCK_LIBRARY})
 
 set(TARGET_COMPILE_FLAGS "${TARGET_COMPILE_FLAGS} ${GOOG_CXX_FLAGS}")
 set_target_properties(${PROJECT_NAME} PROPERTIES
@@ -135,7 +133,7 @@ install(
   RUNTIME DESTINATION bin
 )
 
-foreach(HDR ${INSTALL_SOURCE_HDRS})
+foreach(HDR ${ALL_LIBRARY_HDRS})
   get_filename_component(DIR ${HDR} DIRECTORY)
   install(
     FILES ${HDR}

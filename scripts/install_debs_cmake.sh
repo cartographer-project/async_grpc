@@ -24,7 +24,6 @@ sudo apt-get install -y \
     g++ \
     git \
     google-mock \
-    libboost-all-dev \
     libgflags-dev \
     libgoogle-glog-dev \
     ninja-build
