@@ -52,6 +52,8 @@ if(NOT GMOCK_LIBRARIES)
   )
   if(GMOCK_SRC_DIR)
     # If src version found, build it.
+    # TODO(cschuet): Build as external project to pin version, avoid target name
+    # conflict and avoid install
     add_subdirectory(${GMOCK_SRC_DIR} "${CMAKE_CURRENT_BINARY_DIR}/gmock")
     # The next line is needed for Ubuntu Trusty.
     set(GMOCK_INCLUDE_DIRS "${GMOCK_SRC_DIR}/gtest/include")

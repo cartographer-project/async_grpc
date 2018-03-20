@@ -16,8 +16,8 @@ cmake_minimum_required(VERSION 2.8.12)  # Ships with Ubuntu 14.04 (Trusty)
 
 project(async_grpc)
 
-set(ASYNC_GRPC_MAJOR_VERSION 1)
-set(ASYNC_GRPC_MINOR_VERSION 0)
+set(ASYNC_GRPC_MAJOR_VERSION 0)
+set(ASYNC_GRPC_MINOR_VERSION 1)
 set(ASYNC_GRPC_PATCH_VERSION 0)
 set(ASYNC_GRPC_VERSION ${ASYNC_GRPC_MAJOR_VERSION}.${ASYNC_GRPC_MINOR_VERSION}.${ASYNC_GRPC_PATCH_VERSION})
 set(ASYNC_GRPC_SOVERSION ${ASYNC_GRPC_MAJOR_VERSION}.${ASYNC_GRPC_MINOR_VERSION})
@@ -29,65 +29,62 @@ find_package(GMock REQUIRED)
 find_package(Protobuf 3.0.0 REQUIRED)
 
 set(ALL_LIBRARY_HDRS
+    async_grpc/client.h
     async_grpc/common/blocking_queue.h
     async_grpc/common/make_unique.h
+    async_grpc/common/mutex.h
     async_grpc/common/optional.h
     async_grpc/common/port.h
-    async_grpc/common/mutex.h
     async_grpc/common/time.h
-    async_grpc/service.h
-    async_grpc/execution_context.h
     async_grpc/completion_queue_thread.h
+    async_grpc/event_queue_thread.h
+    async_grpc/execution_context.h
+    async_grpc/retry.h
+    async_grpc/rpc.h
     async_grpc/rpc_handler_interface.h
     async_grpc/rpc_handler.h
-    async_grpc/type_traits.h
-    async_grpc/event_queue_thread.h
-    async_grpc/retry.h
-    async_grpc/client.h
-    async_grpc/rpc.h
+    async_grpc/rpc_service_method_traits.h
     async_grpc/server.h
+    async_grpc/service.h
     async_grpc/testing/rpc_handler_test_server.h
     async_grpc/testing/rpc_handler_wrapper.h
-    async_grpc/rpc_service_method_traits.h)
+    async_grpc/type_traits.h)
 
 set(ALL_LIBRARY_SRCS
-    async_grpc/completion_queue_thread.cc
-    async_grpc/server.cc
-    async_grpc/service.cc
     async_grpc/common/time.cc
+    async_grpc/completion_queue_thread.cc
+    async_grpc/event_queue_thread.cc
     async_grpc/retry.cc
     async_grpc/rpc.cc
-    async_grpc/event_queue_thread.cc)
+    async_grpc/server.cc
+    async_grpc/service.cc)
 
 set(ALL_TESTS
     async_grpc/server_test.cc
     async_grpc/type_traits_test.cc)
 
-list(REMOVE_ITEM ALL_LIBRARY_SRCS ${ALL_TESTS})
-
 set(INSTALL_SOURCE_HDRS ${ALL_LIBRARY_HDRS})
 
-file(GLOB_RECURSE ALL_PROTOS "async_grpc*/*.proto")
 set(ALL_PROTOS
     async_grpc/proto/math_service.proto)
 
 set(ALL_PROTO_SRCS)
 set(ALL_PROTO_HDRS)
-foreach(REL_FIL ${ALL_PROTOS})
-  get_filename_component(DIR ${REL_FIL} DIRECTORY)
-  get_filename_component(FIL_WE ${REL_FIL} NAME_WE)
+foreach(RELATIVEPATH ${ALL_PROTOS})
+  get_filename_component(DIR ${RELATIVEPATH} DIRECTORY)
+  get_filename_component(FILENAME ${RELATIVEPATH} NAME_WE)
 
-  list(APPEND ALL_PROTO_SRCS "${PROJECT_BINARY_DIR}/${DIR}/${FIL_WE}.pb.cc")
-  list(APPEND ALL_PROTO_HDRS "${PROJECT_BINARY_DIR}/${DIR}/${FIL_WE}.pb.h")
+  list(APPEND ALL_PROTO_SRCS "${PROJECT_BINARY_DIR}/${DIR}/${FILENAME}.pb.cc")
+  list(APPEND ALL_PROTO_HDRS "${PROJECT_BINARY_DIR}/${DIR}/${FILENAME}.pb.h")
 
   add_custom_command(
-    OUTPUT "${PROJECT_BINARY_DIR}/${DIR}/${FIL_WE}.pb.cc"
-           "${PROJECT_BINARY_DIR}/${DIR}/${FIL_WE}.pb.h"
+    OUTPUT "${PROJECT_BINARY_DIR}/${DIR}/${FILENAME}.pb.cc"
+           "${PROJECT_BINARY_DIR}/${DIR}/${FILENAME}.pb.h"
     COMMAND  ${PROTOBUF_PROTOC_EXECUTABLE}
     ARGS --cpp_out  ${PROJECT_BINARY_DIR} -I
-      ${PROJECT_SOURCE_DIR} ${REL_FIL}
-    DEPENDS ${REL_FIL}
-    COMMENT "Running C++ protocol buffer compiler on ${REL_FIL}"
+      ${PROJECT_SOURCE_DIR} ${RELATIVEPATH}
+    DEPENDS ${RELATIVEPATH}
+    COMMENT "Running C++ protocol buffer compiler on ${RELATIVEPATH}"
     VERBATIM
   )
 endforeach()
@@ -97,12 +94,12 @@ list(APPEND ALL_LIBRARY_SRCS ${ALL_PROTO_SRCS})
 
 add_library(${PROJECT_NAME} ${ALL_LIBRARY_HDRS} ${ALL_LIBRARY_SRCS})
 
-foreach(REL_FIL ${ALL_TESTS})
-  get_filename_component(DIR ${REL_FIL} DIRECTORY)
-  get_filename_component(FIL_WE ${REL_FIL} NAME_WE)
+foreach(RELATIVEPATH ${ALL_TESTS})
+  get_filename_component(DIR ${RELATIVEPATH} DIRECTORY)
+  get_filename_component(FILENAME ${RELATIVEPATH} NAME_WE)
   # Replace slashes as required for CMP0037.
-  string(REPLACE "/" "." TEST_TARGET_NAME "${DIR}/${FIL_WE}")
-  google_test("${TEST_TARGET_NAME}" ${REL_FIL})
+  string(REPLACE "/" "." TEST_TARGET_NAME "${DIR}/${FILENAME}")
+  google_test("${TEST_TARGET_NAME}" ${RELATIVEPATH})
   target_link_libraries("${TEST_TARGET_NAME}" PUBLIC grpc++)
 endforeach()
 
@@ -116,15 +113,12 @@ target_include_directories(${PROJECT_NAME} SYSTEM PUBLIC
 target_link_libraries(${PROJECT_NAME} PUBLIC ${PROTOBUF_LIBRARY} pthread)
 target_link_libraries(${PROJECT_NAME} PUBLIC grpc++)
 
-# Add the binary directory first, so that port.h is included after it has
-# been generated.
 target_include_directories(${PROJECT_NAME} PUBLIC
     $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}>
     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}>
     $<INSTALL_INTERFACE:include>
 )
 
-# TODO(damonkohler): Create a testing library.
 target_include_directories(${PROJECT_NAME} SYSTEM PRIVATE
   "${GMOCK_INCLUDE_DIRS}")
 target_link_libraries(${PROJECT_NAME} PRIVATE ${GMOCK_LIBRARY})
@@ -142,14 +136,6 @@ install(
 )
 
 foreach(HDR ${INSTALL_SOURCE_HDRS})
-  get_filename_component(DIR ${HDR} DIRECTORY)
-  install(
-    FILES ${HDR}
-    DESTINATION include/${DIR}
-  )
-endforeach()
-
-foreach(HDR ${INSTALL_GENERATED_HDRS})
   get_filename_component(DIR ${HDR} DIRECTORY)
   install(
     FILES ${HDR}
