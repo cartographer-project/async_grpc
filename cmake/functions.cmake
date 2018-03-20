@@ -14,15 +14,8 @@
 
 include(CMakeParseArguments)
 
-macro(_parse_arguments ARGS)
-  set(OPTIONS)
-  set(ONE_VALUE_ARG)
-  set(MULTI_VALUE_ARGS SRCS)
-  cmake_parse_arguments(ARG
-    "${OPTIONS}" "${ONE_VALUE_ARG}" "${MULTI_VALUE_ARGS}" ${ARGS})
-endmacro(_parse_arguments)
-
-macro(_common_compile_stuff VISIBILITY)
+function(google_test NAME ARG_SRC)
+  add_executable(${NAME} ${ARG_SRC})
   set(TARGET_COMPILE_FLAGS "${TARGET_COMPILE_FLAGS} ${GOOG_CXX_FLAGS}")
 
   set_target_properties(${NAME} PROPERTIES
@@ -30,11 +23,6 @@ macro(_common_compile_stuff VISIBILITY)
 
   target_include_directories(${NAME} PUBLIC ${PROJECT_NAME})
   target_link_libraries(${NAME} PUBLIC ${PROJECT_NAME})
-endmacro(_common_compile_stuff)
-
-function(google_test NAME ARG_SRC)
-  add_executable(${NAME} ${ARG_SRC})
-  _common_compile_stuff("PRIVATE")
 
   # Make sure that gmock always includes the correct gtest/gtest.h.
   target_include_directories("${NAME}" SYSTEM PRIVATE
@@ -42,16 +30,6 @@ function(google_test NAME ARG_SRC)
   target_link_libraries("${NAME}" PUBLIC ${GMOCK_LIBRARIES})
 
   add_test(${NAME} ${NAME})
-endfunction()
-
-function(google_binary NAME)
-  _parse_arguments("${ARGN}")
-
-  add_executable(${NAME} ${ARG_SRCS})
-
-  _common_compile_stuff("PRIVATE")
-
-  install(TARGETS "${NAME}" RUNTIME DESTINATION bin)
 endfunction()
 
 # Create a variable 'VAR_NAME'='FLAG'. If VAR_NAME is already set, FLAG is
@@ -88,47 +66,4 @@ macro(google_initialize_async_grpc_project)
   if(NOT CMAKE_BUILD_TYPE OR CMAKE_BUILD_TYPE STREQUAL "")
     set(CMAKE_BUILD_TYPE Release)
   endif()
-
-  if(CMAKE_BUILD_TYPE STREQUAL "Release")
-    google_add_flag(GOOG_CXX_FLAGS "-O3 -DNDEBUG")
-  elseif(CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
-    google_add_flag(GOOG_CXX_FLAGS "-O3 -g -DNDEBUG")
-  elseif(CMAKE_BUILD_TYPE STREQUAL "Debug")
-    if(FORCE_DEBUG_BUILD)
-      message(WARNING "Building in Debug mode, expect very slow performance.")
-      google_add_flag(GOOG_CXX_FLAGS "-g")
-    else()
-      message(FATAL_ERROR
-        "Compiling in Debug mode is not supported and can cause severely degraded performance. "
-        "You should change the build type to Release. If you want to build in Debug mode anyway, "
-        "call CMake with -DFORCE_DEBUG_BUILD=True"
-      )
-    endif()
-# Support for Debian packaging CMAKE_BUILD_TYPE
-  elseif(CMAKE_BUILD_TYPE STREQUAL "None")
-    message(WARNING "Building with CMAKE_BUILD_TYPE None, "
-        "please make sure you have set CFLAGS and CXXFLAGS according to your needs.")
-  else()
-    message(FATAL_ERROR "Unknown CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}")
-  endif()
-
-  message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
-
-  # Add a hook that reruns CMake when source files are added or removed.
-  set(LIST_FILES_CMD "find ${PROJECT_SOURCE_DIR}/ -not -iwholename '*.git*' | sort | sed 's/^/#/'")
-  set(FILES_LIST_PATH "${PROJECT_BINARY_DIR}/AllFiles.cmake")
-  set(DETECT_CHANGES_CMD "bash" "-c" "${LIST_FILES_CMD} | diff -N -q ${FILES_LIST_PATH} - || ${LIST_FILES_CMD} > ${FILES_LIST_PATH}")
-  add_custom_target(${PROJECT_NAME}_detect_changes ALL
-    COMMAND ${DETECT_CHANGES_CMD}
-    VERBATIM
-  )
-  if(NOT EXISTS ${FILES_LIST_PATH})
-    execute_process(COMMAND ${DETECT_CHANGES_CMD})
-  endif()
-  include(${FILES_LIST_PATH})
-endmacro()
-
-macro(google_enable_testing)
-  enable_testing()
-  find_package(GMock REQUIRED)
 endmacro()

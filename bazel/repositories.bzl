@@ -16,16 +16,6 @@
 
 def repositories():
   _maybe(native.http_archive,
-      name = "com_github_nelhage_boost",
-      sha256 = "5c88fc077f6b8111e997fec5146e5f9940ae9a2016eb9949447fcb4b482bcdb3",
-      strip_prefix = "rules_boost-7289bb1d8f938fdf98078297768c122ee9e11c9e",
-      urls = [
-          "https://mirror.bazel.build/github.com/nelhage/rules_boost/archive/7289bb1d8f938fdf98078297768c122ee9e11c9e.tar.gz",
-          "https://github.com/nelhage/rules_boost/archive/7289bb1d8f938fdf98078297768c122ee9e11c9e.tar.gz",
-      ],
-  )
-
-  _maybe(native.http_archive,
       name = "com_github_antonovvk_bazel_rules",
       sha256 = "ba75b07d3fd297375a6688e9a16583eb616e7a74b3d5e8791e7a222cf36ab26e",
       strip_prefix = "bazel_rules-98ddd7e4f7c63ea0868f08bcc228463dac2f9f12",

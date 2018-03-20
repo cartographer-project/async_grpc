@@ -24,37 +24,56 @@ set(ASYNC_GRPC_SOVERSION ${ASYNC_GRPC_MAJOR_VERSION}.${ASYNC_GRPC_MINOR_VERSION}
 
 include("${PROJECT_SOURCE_DIR}/cmake/functions.cmake")
 google_initialize_async_grpc_project()
-google_enable_testing()
-
-find_package(Boost REQUIRED COMPONENTS iostreams)
+enable_testing()
+find_package(GMock REQUIRED)
 find_package(Protobuf 3.0.0 REQUIRED)
 
-include(FindPkgConfig)
+set(ALL_LIBRARY_HDRS
+    async_grpc/common/blocking_queue.h
+    async_grpc/common/make_unique.h
+    async_grpc/common/optional.h
+    async_grpc/common/port.h
+    async_grpc/common/mutex.h
+    async_grpc/common/time.h
+    async_grpc/service.h
+    async_grpc/execution_context.h
+    async_grpc/completion_queue_thread.h
+    async_grpc/rpc_handler_interface.h
+    async_grpc/rpc_handler.h
+    async_grpc/type_traits.h
+    async_grpc/event_queue_thread.h
+    async_grpc/retry.h
+    async_grpc/client.h
+    async_grpc/rpc.h
+    async_grpc/server.h
+    async_grpc/testing/rpc_handler_test_server.h
+    async_grpc/testing/rpc_handler_wrapper.h
+    async_grpc/rpc_service_method_traits.h)
 
-file(GLOB_RECURSE ALL_LIBRARY_HDRS "*.h")
-file(GLOB_RECURSE ALL_LIBRARY_SRCS "*.cc")
-file(GLOB_RECURSE ALL_TESTS "*_test.cc")
-file(GLOB_RECURSE ALL_EXECUTABLES "*_main.cc")
+set(ALL_LIBRARY_SRCS
+    async_grpc/completion_queue_thread.cc
+    async_grpc/server.cc
+    async_grpc/service.cc
+    async_grpc/common/time.cc
+    async_grpc/retry.cc
+    async_grpc/rpc.cc
+    async_grpc/event_queue_thread.cc)
 
-# Remove dotfiles/-folders that could potentially pollute the build.
-file(GLOB_RECURSE ALL_DOTFILES ".*/*")
-if (ALL_DOTFILES)
-  list(REMOVE_ITEM ALL_LIBRARY_HDRS ${ALL_DOTFILES})
-  list(REMOVE_ITEM ALL_LIBRARY_SRCS ${ALL_DOTFILES})
-  list(REMOVE_ITEM ALL_TESTS ${ALL_DOTFILES})
-  list(REMOVE_ITEM ALL_EXECUTABLES ${ALL_DOTFILES})
-endif()
+set(ALL_TESTS
+    async_grpc/server_test.cc
+    async_grpc/type_traits_test.cc)
 
 list(REMOVE_ITEM ALL_LIBRARY_SRCS ${ALL_TESTS})
 
 set(INSTALL_SOURCE_HDRS ${ALL_LIBRARY_HDRS})
 
 file(GLOB_RECURSE ALL_PROTOS "async_grpc*/*.proto")
+set(ALL_PROTOS
+    async_grpc/proto/math_service.proto)
 
 set(ALL_PROTO_SRCS)
 set(ALL_PROTO_HDRS)
-foreach(ABS_FIL ${ALL_PROTOS})
-  file(RELATIVE_PATH REL_FIL ${PROJECT_SOURCE_DIR} ${ABS_FIL})
+foreach(REL_FIL ${ALL_PROTOS})
   get_filename_component(DIR ${REL_FIL} DIRECTORY)
   get_filename_component(FIL_WE ${REL_FIL} NAME_WE)
 
@@ -66,9 +85,9 @@ foreach(ABS_FIL ${ALL_PROTOS})
            "${PROJECT_BINARY_DIR}/${DIR}/${FIL_WE}.pb.h"
     COMMAND  ${PROTOBUF_PROTOC_EXECUTABLE}
     ARGS --cpp_out  ${PROJECT_BINARY_DIR} -I
-      ${PROJECT_SOURCE_DIR} ${ABS_FIL}
-    DEPENDS ${ABS_FIL}
-    COMMENT "Running C++ protocol buffer compiler on ${ABS_FIL}"
+      ${PROJECT_SOURCE_DIR} ${REL_FIL}
+    DEPENDS ${REL_FIL}
+    COMMENT "Running C++ protocol buffer compiler on ${REL_FIL}"
     VERBATIM
   )
 endforeach()
@@ -78,26 +97,15 @@ list(APPEND ALL_LIBRARY_SRCS ${ALL_PROTO_SRCS})
 
 add_library(${PROJECT_NAME} ${ALL_LIBRARY_HDRS} ${ALL_LIBRARY_SRCS})
 
-foreach(ABS_FIL ${ALL_TESTS})
-  file(RELATIVE_PATH REL_FIL ${PROJECT_SOURCE_DIR} ${ABS_FIL})
+foreach(REL_FIL ${ALL_TESTS})
   get_filename_component(DIR ${REL_FIL} DIRECTORY)
   get_filename_component(FIL_WE ${REL_FIL} NAME_WE)
   # Replace slashes as required for CMP0037.
   string(REPLACE "/" "." TEST_TARGET_NAME "${DIR}/${FIL_WE}")
-  google_test("${TEST_TARGET_NAME}" ${ABS_FIL})
-  if(${BUILD_GRPC})
-    target_link_libraries("${TEST_TARGET_NAME}" PUBLIC grpc++)
-  endif()
-  if(${BUILD_PROMETHEUS})
-    target_link_libraries(${PROJECT_NAME} PUBLIC prometheus-cpp)
-  endif()
+  google_test("${TEST_TARGET_NAME}" ${REL_FIL})
+  target_link_libraries("${TEST_TARGET_NAME}" PUBLIC grpc++)
 endforeach()
 
-target_include_directories(${PROJECT_NAME} SYSTEM PUBLIC
-  "${Boost_INCLUDE_DIRS}")
-target_link_libraries(${PROJECT_NAME} PUBLIC ${Boost_LIBRARIES})
-
-# We expect find_package(Ceres) to have located these for us.
 target_link_libraries(${PROJECT_NAME} PUBLIC glog)
 target_link_libraries(${PROJECT_NAME} PUBLIC gflags)
 
@@ -119,7 +127,7 @@ target_include_directories(${PROJECT_NAME} PUBLIC
 # TODO(damonkohler): Create a testing library.
 target_include_directories(${PROJECT_NAME} SYSTEM PRIVATE
   "${GMOCK_INCLUDE_DIRS}")
-target_link_libraries(${PROJECT_NAME} PUBLIC ${GMOCK_LIBRARY})
+target_link_libraries(${PROJECT_NAME} PRIVATE ${GMOCK_LIBRARY})
 
 set(TARGET_COMPILE_FLAGS "${TARGET_COMPILE_FLAGS} ${GOOG_CXX_FLAGS}")
 set_target_properties(${PROJECT_NAME} PROPERTIES
@@ -134,17 +142,18 @@ install(
 )
 
 foreach(HDR ${INSTALL_SOURCE_HDRS})
-  file(RELATIVE_PATH REL_FIL ${PROJECT_SOURCE_DIR} ${HDR})
-  get_filename_component(DIR ${REL_FIL} DIRECTORY)
+  message(${HDR})
+  get_filename_component(DIR ${HDR} DIRECTORY)
   install(
     FILES ${HDR}
     DESTINATION include/${DIR}
   )
 endforeach()
 
+message("LALA")
 foreach(HDR ${INSTALL_GENERATED_HDRS})
-  file(RELATIVE_PATH REL_FIL ${PROJECT_BINARY_DIR} ${HDR})
-  get_filename_component(DIR ${REL_FIL} DIRECTORY)
+  message(${HDR})
+  get_filename_component(DIR ${HDR} DIRECTORY)
   install(
     FILES ${HDR}
     DESTINATION include/${DIR}
