@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-workspace(name = "com_github_cschuet_async_grpc")
+workspace(name = "com_github_googlecartographer_async_grpc")
 
 load("//:bazel/repositories.bzl", "repositories")
 
