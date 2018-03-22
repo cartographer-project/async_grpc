@@ -68,9 +68,7 @@
   struct traitsName {                                                    \
     using IncomingType = incomingType;                                   \
     using OutgoingType = outgoingType;                                   \
-    static const char* MethodName() {                                    \
-      return methodName;                                                 \
-    }                                                                    \
+    static const char* MethodName() { return methodName; }                                                                    \
   };
 
 namespace async_grpc {
