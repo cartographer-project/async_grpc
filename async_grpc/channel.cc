@@ -18,13 +18,15 @@
 
 namespace async_grpc {
 
-Channel::Channel(const std::string& server_address, bool use_ssl, std::unique_ptr<auth::CredentialsProvider> credentials_provider)
-    :channel_(::grpc::CreateChannel(server_address, use_ssl ? ::grpc::SslCredentials(ssl_credentials_options_) : ::grpc::InsecureChannelCredentials())), credentials_provider_(std::move(credentials_provider))
-{}
+Channel::Channel(
+    const std::string& server_address, bool use_ssl,
+    std::unique_ptr<auth::CredentialsProvider> credentials_provider)
+    : channel_(::grpc::CreateChannel(
+          server_address, use_ssl
+                              ? ::grpc::SslCredentials(ssl_credentials_options_)
+                              : ::grpc::InsecureChannelCredentials())),
+      credentials_provider_(std::move(credentials_provider)) {}
 
-std::shared_ptr<::grpc::Channel> Channel::GetGrpcChannel() {
-  return channel_;
-}
-
+std::shared_ptr<::grpc::Channel> Channel::GetGrpcChannel() { return channel_; }
 
 }  // namespace async_grpc

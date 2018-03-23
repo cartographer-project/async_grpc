@@ -29,7 +29,8 @@ class Client;
 
 class Channel {
  public:
-  Channel(const std::string& server_address, bool use_ssl, std::unique_ptr<auth::CredentialsProvider> credentials_provider);
+  Channel(const std::string& server_address, bool use_ssl,
+          std::unique_ptr<auth::CredentialsProvider> credentials_provider);
   std::shared_ptr<::grpc::Channel> GetGrpcChannel();
 
  private:

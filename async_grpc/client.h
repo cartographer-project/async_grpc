@@ -142,7 +142,8 @@ class Client {
     if (!client_writer_) {
       client_writer_.reset(
           ::grpc::internal::ClientWriterFactory<RequestType>::Create(
-              channel_->GetGrpcChannel().get(), rpc_method_, client_context_.get(), &response_));
+              channel_->GetGrpcChannel().get(), rpc_method_,
+              client_context_.get(), &response_));
     }
   }
 
@@ -151,9 +152,10 @@ class Client {
              ::grpc::internal::RpcMethod::BIDI_STREAMING);
     if (!client_reader_writer_) {
       client_reader_writer_.reset(
-          ::grpc::internal::ClientReaderWriterFactory<
-              RequestType, ResponseType>::Create(channel_->GetGrpcChannel().get(), rpc_method_,
-                                                 client_context_.get()));
+          ::grpc::internal::
+              ClientReaderWriterFactory<RequestType, ResponseType>::Create(
+                  channel_->GetGrpcChannel().get(), rpc_method_,
+                  client_context_.get()));
     }
   }
 
@@ -162,7 +164,8 @@ class Client {
              ::grpc::internal::RpcMethod::SERVER_STREAMING);
     client_reader_.reset(
         ::grpc::internal::ClientReaderFactory<ResponseType>::Create(
-            channel_->GetGrpcChannel().get(), rpc_method_, client_context_.get(), request));
+            channel_->GetGrpcChannel().get(), rpc_method_,
+            client_context_.get(), request));
   }
 
   ::grpc::Status MakeBlockingUnaryCall(const RequestType &request,
@@ -170,7 +173,8 @@ class Client {
     CHECK_EQ(rpc_method_.method_type(),
              ::grpc::internal::RpcMethod::NORMAL_RPC);
     return ::grpc::internal::BlockingUnaryCall(
-        channel_->GetGrpcChannel().get(), rpc_method_, client_context_.get(), request, response);
+        channel_->GetGrpcChannel().get(), rpc_method_, client_context_.get(),
+        request, response);
   }
 
   std::shared_ptr<Channel> channel_;

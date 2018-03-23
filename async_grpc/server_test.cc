@@ -170,7 +170,9 @@ class ServerTest : public ::testing::Test {
     server_builder.RegisterHandler<GetEchoHandler>();
     server_builder.RegisterHandler<GetSequenceHandler>();
     server_ = server_builder.Build();
-    client_channel_ = std::make_shared<Channel>(kServerAddress, false /* use_ssl */, nullptr /* credentials_provider */);
+    client_channel_ =
+        std::make_shared<Channel>(kServerAddress, false /* use_ssl */,
+                                  nullptr /* credentials_provider */);
   }
 
   std::unique_ptr<Server> server_;

@@ -33,7 +33,7 @@ class CredentialsProvider {
   virtual void SetCredentials(::grpc::ClientContext *client_context) = 0;
 };
 
-} // namespace auth
-} // namespace async_grpc
+}  // namespace auth
+}  // namespace async_grpc
 
-#endif // ASYNC_GRPC_AUTH_CREDENTIALS_PROVIDER_H
+#endif  // ASYNC_GRPC_AUTH_CREDENTIALS_PROVIDER_H
