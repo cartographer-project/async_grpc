@@ -17,6 +17,7 @@
 #ifndef CPP_GRPC_CLIENT_H
 #define CPP_GRPC_CLIENT_H
 
+#include "async_grpc/channel.h"
 #include "async_grpc/retry.h"
 #include "async_grpc/rpc_handler_interface.h"
 #include "async_grpc/rpc_service_method_traits.h"
@@ -36,24 +37,24 @@ class Client {
   using ResponseType = typename RpcServiceMethod::ResponseType;
 
  public:
-  Client(std::shared_ptr<::grpc::Channel> channel, RetryStrategy retry_strategy)
+  Client(std::shared_ptr<Channel> channel, RetryStrategy retry_strategy)
       : channel_(channel),
         client_context_(common::make_unique<::grpc::ClientContext>()),
         rpc_method_name_(RpcServiceMethod::MethodName()),
         rpc_method_(rpc_method_name_.c_str(), RpcServiceMethod::StreamType,
-                    channel_),
+                    channel_->GetGrpcChannel()),
         retry_strategy_(retry_strategy) {
     CHECK(!retry_strategy ||
           rpc_method_.method_type() == ::grpc::internal::RpcMethod::NORMAL_RPC)
         << "Retry is currently only support for NORMAL_RPC.";
   }
 
-  Client(std::shared_ptr<::grpc::Channel> channel)
+  Client(std::shared_ptr<Channel> channel)
       : channel_(channel),
         client_context_(common::make_unique<::grpc::ClientContext>()),
         rpc_method_name_(RpcServiceMethod::MethodName()),
         rpc_method_(rpc_method_name_.c_str(), RpcServiceMethod::StreamType,
-                    channel_) {}
+                    channel_->GetGrpcChannel()) {}
 
   bool StreamRead(ResponseType *response) {
     switch (rpc_method_.method_type()) {
@@ -141,7 +142,7 @@ class Client {
     if (!client_writer_) {
       client_writer_.reset(
           ::grpc::internal::ClientWriterFactory<RequestType>::Create(
-              channel_.get(), rpc_method_, client_context_.get(), &response_));
+              channel_->GetGrpcChannel().get(), rpc_method_, client_context_.get(), &response_));
     }
   }
 
@@ -151,7 +152,7 @@ class Client {
     if (!client_reader_writer_) {
       client_reader_writer_.reset(
           ::grpc::internal::ClientReaderWriterFactory<
-              RequestType, ResponseType>::Create(channel_.get(), rpc_method_,
+              RequestType, ResponseType>::Create(channel_->GetGrpcChannel().get(), rpc_method_,
                                                  client_context_.get()));
     }
   }
@@ -161,7 +162,7 @@ class Client {
              ::grpc::internal::RpcMethod::SERVER_STREAMING);
     client_reader_.reset(
         ::grpc::internal::ClientReaderFactory<ResponseType>::Create(
-            channel_.get(), rpc_method_, client_context_.get(), request));
+            channel_->GetGrpcChannel().get(), rpc_method_, client_context_.get(), request));
   }
 
   ::grpc::Status MakeBlockingUnaryCall(const RequestType &request,
@@ -169,10 +170,10 @@ class Client {
     CHECK_EQ(rpc_method_.method_type(),
              ::grpc::internal::RpcMethod::NORMAL_RPC);
     return ::grpc::internal::BlockingUnaryCall(
-        channel_.get(), rpc_method_, client_context_.get(), request, response);
+        channel_->GetGrpcChannel().get(), rpc_method_, client_context_.get(), request, response);
   }
 
-  std::shared_ptr<::grpc::Channel> channel_;
+  std::shared_ptr<Channel> channel_;
   std::unique_ptr<::grpc::ClientContext> client_context_;
   const std::string rpc_method_name_;
   const ::grpc::internal::RpcMethod rpc_method_;
