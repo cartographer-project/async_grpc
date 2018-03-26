@@ -37,7 +37,7 @@ const std::string kServerAddress = "localhost:50051";
 
 template <typename RpcServiceMethodConcept, typename RpcHandlerType>
 class RpcHandlerTestServer : public Server {
-public:
+ public:
   using RequestType =
       StripStream<typename RpcServiceMethodConcept::IncomingType>;
   using ResponseType =
@@ -93,7 +93,7 @@ public:
 
   const ResponseType &response() { return client_.response(); }
 
-private:
+ private:
   using ClientWriter = ::grpc::internal::ClientWriterFactory<RequestType>;
 
   void WaitForHandlerCompletion(
