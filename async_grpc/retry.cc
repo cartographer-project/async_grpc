@@ -39,6 +39,10 @@ RetryIndicator CreateLimitedRetryIndicator(int max_attempts) {
   };
 }
 
+RetryIndicator CreateUnlimitedRetryIndicator() {
+  return [](int failed_attempts) { return true; };
+}
+
 RetryDelayCalculator CreateBackoffDelayCalculator(Duration min_delay,
                                                   float backoff_factor) {
   return [min_delay, backoff_factor](int failed_attempts) -> Duration {
@@ -50,12 +54,21 @@ RetryDelayCalculator CreateBackoffDelayCalculator(Duration min_delay,
   };
 }
 
+RetryDelayCalculator CreateConstantDelayCalculator(Duration delay) {
+  return [delay](int failed_attempts) -> Duration { return delay; };
+}
+
 RetryStrategy CreateLimitedBackoffStrategy(Duration min_delay,
                                            float backoff_factor,
                                            int max_attempts) {
   return CreateRetryStrategy(
       CreateLimitedRetryIndicator(max_attempts),
       CreateBackoffDelayCalculator(min_delay, backoff_factor));
+}
+
+RetryStrategy CreateUnlimitedConstantDelayStrategy(Duration delay) {
+  return CreateRetryStrategy(CreateUnlimitedRetryIndicator(),
+                             CreateConstantDelayCalculator(delay));
 }
 
 bool RetryWithStrategy(RetryStrategy retry_strategy, std::function<bool()> op,

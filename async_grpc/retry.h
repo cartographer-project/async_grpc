@@ -35,11 +35,14 @@ RetryStrategy CreateRetryStrategy(RetryIndicator retry_indicator,
                                   RetryDelayCalculator retry_delay_calculator);
 
 RetryIndicator CreateLimitedRetryIndicator(int max_attempts);
+RetryIndicator CreateUnlimitedRetryIndicator();
 RetryDelayCalculator CreateBackoffDelayCalculator(Duration min_delay,
                                                   float backoff_factor);
+RetryDelayCalculator CreateConstantDelayCalculator(Duration delay);
 RetryStrategy CreateLimitedBackoffStrategy(Duration min_delay,
                                            float backoff_factor,
                                            int max_attempts);
+RetryStrategy CreateUnlimitedConstantDelayStrategy(Duration delay);
 
 bool RetryWithStrategy(RetryStrategy retry_strategy, std::function<bool()> op,
                        std::function<void()> reset = nullptr);
