@@ -69,10 +69,11 @@ class Client {
     }
   }
 
-  bool Write(const RequestType &request) {
-    return RetryWithStrategy(retry_strategy_,
-                             [this, &request] { return WriteImpl(request); },
-                             [this] { Reset(); });
+  bool Write(const RequestType &request, ::grpc::Status *status = nullptr) {
+    return RetryWithStrategy(
+        retry_strategy_,
+        [this, &request, &status] { return WriteImpl(request, status); },
+        [this] { Reset(); });
   }
 
   bool StreamWritesDone() {
@@ -118,10 +119,15 @@ class Client {
     client_context_ = common::make_unique<::grpc::ClientContext>();
   }
 
-  bool WriteImpl(const RequestType &request) {
+  bool WriteImpl(const RequestType &request, ::grpc::Status *status) {
     switch (rpc_method_.method_type()) {
-      case ::grpc::internal::RpcMethod::NORMAL_RPC:
-        return MakeBlockingUnaryCall(request, &response_).ok();
+      case ::grpc::internal::RpcMethod::NORMAL_RPC: {
+        auto status_normal_rpc = MakeBlockingUnaryCall(request, &response_);
+        if (status != nullptr) {
+          *status = status_normal_rpc;
+        }
+        return status_normal_rpc.ok();
+      }
       case ::grpc::internal::RpcMethod::CLIENT_STREAMING:
         InstantiateClientWriterIfNeeded();
         return client_writer_->Write(request);
