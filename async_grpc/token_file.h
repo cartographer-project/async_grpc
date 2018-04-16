@@ -29,8 +29,7 @@ namespace async_grpc {
 // The file is a flat file that contains only an OAuth bearer token. The
 // credentials are cached for the length of one refresh_interval.
 std::shared_ptr<grpc::CallCredentials> TokenFileCredentials(
-    const std::string& filename,
-    const common::Duration& refresh_interval);
+    const std::string& filename, const common::Duration& refresh_interval);
 
 }  // namespace async_grpc
 

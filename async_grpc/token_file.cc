@@ -1,7 +1,7 @@
 #include "async_grpc/token_file.h"
 
-#include <fstream>
 #include <grpc++/support/status.h>
+#include <fstream>
 #include <string>
 
 #include "async_grpc/common/make_unique.h"
@@ -15,8 +15,7 @@ class OAuthPlugin : public grpc::MetadataCredentialsPlugin {
   OAuthPlugin(const std::string& file, const common::Duration& refresh_interval)
       : file_(file),
         refresh_interval_(refresh_interval),
-        refresh_time_(std::chrono::steady_clock::now()) {
-  }
+        refresh_time_(std::chrono::steady_clock::now()) {}
 
   grpc::Status GetMetadata(
       grpc::string_ref service_url, grpc::string_ref method_name,
@@ -24,7 +23,8 @@ class OAuthPlugin : public grpc::MetadataCredentialsPlugin {
       std::multimap<grpc::string, grpc::string>* metadata) override {
     std::string token = GetToken();
     if (token.empty()) {
-      return grpc::Status(grpc::StatusCode::UNAUTHENTICATED, "No authentication token");
+      return grpc::Status(grpc::StatusCode::UNAUTHENTICATED,
+                          "No authentication token");
     }
     metadata->insert(std::make_pair("authorization", "Bearer " + token));
     return grpc::Status::OK;
@@ -41,8 +41,9 @@ class OAuthPlugin : public grpc::MetadataCredentialsPlugin {
     auto now = std::chrono::steady_clock::now();
     common::MutexLocker lock(&mutex_);
     if (refresh_time_ <= now) {
-      std::string token(std::istreambuf_iterator<char>(std::ifstream(file_).rdbuf()),
-                        std::istreambuf_iterator<char>());
+      std::string token(
+          std::istreambuf_iterator<char>(std::ifstream(file_).rdbuf()),
+          std::istreambuf_iterator<char>());
       token_ = token;
       refresh_time_ = now + refresh_interval_;
     }
