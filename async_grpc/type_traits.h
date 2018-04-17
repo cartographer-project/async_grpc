@@ -42,7 +42,7 @@
                                                                                \
    public:                                                                     \
     static constexpr bool value = sizeof(check<U>(0)) == sizeof(std::uint8_t); \
-  };
+  }
 
 #define DEFINE_HAS_MEMBER_TYPE(traitsName, Type)           \
   template <class T>                                       \
@@ -61,7 +61,7 @@
    public:                                                 \
     static constexpr bool value =                          \
         sizeof(check<Derived>(0)) == sizeof(std::uint8_t); \
-  };
+  }
 
 #define DEFINE_HANDLER_SIGNATURE(traitsName, incomingType, outgoingType, \
                                  methodName)                             \
