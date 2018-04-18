@@ -48,7 +48,7 @@ set(ALL_LIBRARY_HDRS
     async_grpc/service.h
     async_grpc/testing/rpc_handler_test_server.h
     async_grpc/testing/rpc_handler_wrapper.h
-    async_grpc/token_file.h
+    async_grpc/token_file_credentials.h
     async_grpc/type_traits.h)
 
 set(ALL_LIBRARY_SRCS
@@ -59,7 +59,7 @@ set(ALL_LIBRARY_SRCS
     async_grpc/rpc.cc
     async_grpc/server.cc
     async_grpc/service.cc
-    async_grpc/token_file.cc)
+    async_grpc/token_file_credentials.cc)
 
 set(ALL_TESTS
     async_grpc/server_test.cc
