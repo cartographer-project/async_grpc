@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "async_grpc/token_file.h"
+#include "async_grpc/token_file_credentials.h"
 
 #include <grpc++/support/status.h>
 #include <fstream>
