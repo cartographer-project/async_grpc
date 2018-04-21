@@ -1,0 +1,42 @@
+<?xml version="1.0"?>
+<!--
+  Copyright 2018 The Cartographer Authors
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+       http://www.apache.org/licenses/LICENSE-2.0
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+-->
+
+<package format="2">
+  <name>async_grpc</name>
+  <version>0.0.0</version>
+  <description>
+    Framework for building asynchronous, multi-threaded gRPC services
+  </description>
+  <maintainer email="google-cartographer@googlegroups.com">
+    The Cartographer Authors
+  </maintainer>
+  <license>Apache 2.0</license>
+
+  <url>https://github.com/googlecartographer/async_grpc</url>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <build_depend>g++-static</build_depend>
+  <build_depend>google-mock</build_depend>
+
+  <depend>boost</depend>
+  <depend>grpc</depend>
+  <depend>libgflags-dev</depend>
+  <depend>libgoogle-glog-dev</depend>
+  <depend>protobuf-dev</depend>
+
+  <export>
+    <build_type>cmake</build_type>
+  </export>
+</package>
