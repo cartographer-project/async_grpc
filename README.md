@@ -29,7 +29,7 @@ So we built a small server framework on top of the existing gRPC async mechanism
 
 <div style="text-align:center"><img src ="gfx/diagram.png" /></div>
 
-<div style="text-align:center">Figure 1: gRPC framework architecture overview</div>
+<div style="text-align:center">Figure 1: gRPC framework architecture overview.</div>
 
 The above class diagram provides an overview of the most important concepts in the framework.
 Let's look at these in turn.
@@ -39,7 +39,7 @@ Let's look at these in turn.
 <a name="server"></a>
 
 The `Server` class owns all server-wide resources, such as the gRPC completion queues, all event queues and the threads that process these queues (see [Threading Model](#threading-model) section below for more details).
-In addition to that the server may own an implementation of `ExecutionContext` which provides shared state that can be accessed by `RpcHandler`s in a thread-safe manner (see [here](#example-sharing-resources-across-handler-invocations) for example).
+In addition to that the server may own an implementation of `ExecutionContext` which provides shared state that can be accessed by `RpcHandlers` in a thread-safe manner (see [here](#example-sharing-resources-across-handler-invocations) for example).
 
 The `Server` also maintains a mapping from (service name, method name) to `RpcHandler` implementations. When the server is started it creates the `Service` objects as needed for the registered methods and passes the mappings to the `RpcHandler`s to the `Service`s so that they can instantiate the appropriate handlers when requests are issued against their methods.
 
@@ -77,7 +77,7 @@ By default we simply assign them in a round-robin fashion.
 
 An `Rpc` represents a connection from a particular client for a specific method invocations.
 One client invoking two different methods on the same server is therefore represented by two `Rpc` objects.
-`N * M Rpc` objects are created when the server is started waiting for incoming client connections, where `N` is the number of completion queues and `M` is the total number of methods offered by the server across all services.
+`N * M` `Rpc` objects are created when the server is started waiting for incoming client connections, where `N` is the number of completion queues and `M` is the total number of methods offered by the server across all services.
 When a client invokes a method, the connection is randomly assigned to a completion queue by gRPC.
 The `Rpc` object responsible for the method on that particular completion queue is cloned and the new `Rpc` object starts listening for new connections while the old one takes care of any interaction with the client and dies when the method invocation is finished by either client or server.
 
