@@ -30,7 +30,7 @@ So we built a small server framework on top of the existing gRPC async mechanism
 
 We start by defining the gRPC service as a proto service definition:
 
-```
+```proto
 syntax = "proto3";
 
 package proto;
@@ -53,7 +53,7 @@ For streaming RPCs the request or response type would have been prepended with a
 
 Next we define an implementation of the business logic that consumes the request and generates the response, i.e. the RPC handler.
 
-```
+```C++
 DEFINE_HANDLER_SIGNATURE(
     GetSquareSignature, proto::GetSquareRequest, proto::GetSquareResponse,
     "/proto.Math/GetSquare")
@@ -78,7 +78,7 @@ Note that we could have decided to call also call e.g. Finish(`PERMISSION_DENIED
 
 Next we set up the server and register our message handler.
 
-```
+```C++
 Server::Builder server_builder;
 server_builder.SetServerAddress("localhost:50051");
 server_builder.SetNumGrpcThreads(2);
