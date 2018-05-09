@@ -63,9 +63,10 @@ class RpcHandlerTestServer : public Server {
 
   ~RpcHandlerTestServer() { this->Shutdown(); };
 
-  void SendWrite(const RequestType &message) {
-    EXPECT_TRUE(client_.Write(message));
+  bool SendWrite(const RequestType &message, ::grpc::Status *status = nullptr) {
+    bool success = client_.Write(message, status);
     WaitForHandlerCompletion(RpcHandlerWrapper<RpcHandlerType>::ON_REQUEST);
+    return success;
   }
 
   // Parses a request message from the passed string and issues the
