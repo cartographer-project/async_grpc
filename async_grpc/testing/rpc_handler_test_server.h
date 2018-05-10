@@ -119,6 +119,7 @@ class RpcHandlerTestServer : public Server {
               event_callback);
       rpc_handler->SetRpc(rpc);
       rpc_handler->SetExecutionContext(execution_context);
+      rpc_handler->Initialize();
       return rpc_handler;
     };
     return RpcHandlerInfo{RequestType::default_instance().GetDescriptor(),
