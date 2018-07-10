@@ -70,10 +70,18 @@ class Client {
   }
 
   bool Write(const RequestType &request, ::grpc::Status *status = nullptr) {
-    return RetryWithStrategy(
-        retry_strategy_,
-        [this, &request, &status] { return WriteImpl(request, status); },
-        [this] { Reset(); });
+    ::grpc::Status internal_status;
+    bool result = RetryWithStrategy(retry_strategy_,
+                                    [this, &request, &internal_status] {
+                                      WriteImpl(request, &internal_status);
+                                      return internal_status;
+                                    },
+                                    [this] { Reset(); });
+
+    if (status != nullptr) {
+      *status = internal_status;
+    }
+    return result;
   }
 
   bool StreamWritesDone() {
