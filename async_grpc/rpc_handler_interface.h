@@ -30,6 +30,7 @@ class RpcHandlerInterface {
   virtual ~RpcHandlerInterface() = default;
   virtual void SetExecutionContext(ExecutionContext* execution_context) = 0;
   virtual void SetRpc(Rpc* rpc) = 0;
+  virtual void Initialize(){};
   virtual void OnRequestInternal(
       const ::google::protobuf::Message* request) = 0;
   virtual void OnReadsDone(){};

@@ -87,6 +87,7 @@ class Server {
                     common::make_unique<RpcHandlerType>();
                 rpc_handler->SetRpc(rpc);
                 rpc_handler->SetExecutionContext(execution_context);
+                rpc_handler->Initialize();
                 return rpc_handler;
               },
               RpcServiceMethod::StreamType, method_full_name});
