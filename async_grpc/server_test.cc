@@ -21,6 +21,7 @@
 #include "async_grpc/client.h"
 #include "async_grpc/execution_context.h"
 #include "async_grpc/proto/math_service.pb.h"
+#include "async_grpc/retry.h"
 #include "async_grpc/rpc_handler.h"
 #include "glog/logging.h"
 #include "google/protobuf/descriptor.h"
@@ -102,6 +103,9 @@ struct GetSquareMethod {
 class GetSquareHandler : public RpcHandler<GetSquareMethod> {
  public:
   void OnRequest(const proto::GetSquareRequest& request) override {
+    if (request.input() < 0) {
+      Finish(::grpc::Status(::grpc::INTERNAL, "internal error"));
+    }
     auto response = common::make_unique<proto::GetSquareResponse>();
     response->set_output(request.input() * request.input());
     std::cout << "on request: " << request.input() << std::endl;
@@ -273,6 +277,19 @@ TEST_F(ServerTest, ProcessServerStreamingRpcTest) {
   }
   EXPECT_FALSE(client.StreamRead(&response));
   EXPECT_TRUE(client.StreamFinish().ok());
+
+  server_->Shutdown();
+}
+
+TEST_F(ServerTest, RetryWithUnrecoverableError) {
+  server_->Start();
+
+  Client<GetSquareMethod> client(
+      client_channel_, CreateUnlimitedConstantDelayStrategy(
+                           common::FromSeconds(1), {::grpc::INTERNAL}));
+  proto::GetSquareRequest request;
+  request.set_input(-11);
+  EXPECT_FALSE(client.Write(request));
 
   server_->Shutdown();
 }

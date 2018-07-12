@@ -37,6 +37,16 @@ void Server::Builder::SetServerAddress(const std::string& server_address) {
   options_.server_address = server_address;
 }
 
+void Server::Builder::SetMaxReceiveMessageSize(int max_receive_message_size) {
+  CHECK_GT(max_receive_message_size, 0) << "max_receive_message_size must be larger than 0.";
+  options_.max_receive_message_size = max_receive_message_size;
+}
+
+void Server::Builder::SetMaxSendMessageSize(int max_send_message_size) {
+  CHECK_GT(max_send_message_size, 0) << "max_send_message_size must be larger than 0.";
+  options_.max_send_message_size = max_send_message_size;
+}
+
 std::tuple<std::string, std::string> Server::Builder::ParseMethodFullName(
     const std::string& method_full_name) {
   CHECK(method_full_name.at(0) == '/') << "Invalid method name.";
@@ -60,6 +70,10 @@ std::unique_ptr<Server> Server::Builder::Build() {
 Server::Server(const Options& options) : options_(options) {
   server_builder_.AddListeningPort(options_.server_address,
                                    ::grpc::InsecureServerCredentials());
+
+  // Set max message sizes.
+  server_builder_.SetMaxReceiveMessageSize(options.max_receive_message_size);
+  server_builder_.SetMaxSendMessageSize(options.max_send_message_size);
 
   // Set up event queue threads.
   event_queue_threads_ =
