@@ -34,6 +34,11 @@
 #include "grpc++/grpc++.h"
 
 namespace async_grpc {
+namespace {
+
+constexpr int kDefaultMaxMessageSize = 10 * 1024 * 1024;  // 10 MB
+
+}  // namespace
 
 class Server {
  protected:
@@ -43,6 +48,8 @@ class Server {
     size_t num_grpc_threads;
     size_t num_event_threads;
     std::string server_address;
+    int max_receive_message_size = kDefaultMaxMessageSize;
+    int max_send_message_size = kDefaultMaxMessageSize;
   };
 
  public:
@@ -55,6 +62,8 @@ class Server {
     void SetNumGrpcThreads(std::size_t num_grpc_threads);
     void SetNumEventThreads(std::size_t num_event_threads);
     void SetServerAddress(const std::string& server_address);
+    void SetMaxReceiveMessageSize(int max_receive_message_size);
+    void SetMaxSendMessageSize(int max_send_message_size);
 
     template <typename RpcHandlerType>
     void RegisterHandler() {
