@@ -45,6 +45,12 @@ class Server {
   // All options that configure server behaviour such as number of threads,
   // ports etc.
   struct Options {
+    Options() = default;
+    Options(size_t num_grpc_threads, size_t num_event_threads,
+            const std::string& server_address)
+        : num_grpc_threads(num_grpc_threads),
+          num_event_threads(num_event_threads),
+          server_address(server_address) {}
     size_t num_grpc_threads;
     size_t num_event_threads;
     std::string server_address;

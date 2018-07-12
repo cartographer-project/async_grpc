@@ -44,7 +44,7 @@ class RpcHandlerTestServer : public Server {
       StripStream<typename RpcServiceMethodConcept::OutgoingType>;
 
   RpcHandlerTestServer(std::unique_ptr<ExecutionContext> execution_context)
-      : Server(Options{1, 1, kServerAddress}),
+      : Server(Options(1, 1, kServerAddress)),
         channel_(::grpc::CreateChannel(kServerAddress,
                                        ::grpc::InsecureChannelCredentials())),
         client_(channel_) {
