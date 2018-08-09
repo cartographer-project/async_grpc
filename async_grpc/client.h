@@ -17,6 +17,7 @@
 #ifndef CPP_GRPC_CLIENT_H
 #define CPP_GRPC_CLIENT_H
 
+#include "async_grpc/common/optional.h"
 #include "async_grpc/retry.h"
 #include "async_grpc/rpc_handler_interface.h"
 #include "async_grpc/rpc_service_method_traits.h"
@@ -47,14 +48,6 @@ class Client<RpcServiceMethodConcept, ::grpc::internal::RpcMethod::NORMAL_RPC> {
   using ResponseType = typename RpcServiceMethod::ResponseType;
 
  public:
-  Client(std::shared_ptr<::grpc::Channel> channel, RetryStrategy retry_strategy)
-      : channel_(channel),
-        client_context_(common::make_unique<::grpc::ClientContext>()),
-        rpc_method_name_(RpcServiceMethod::MethodName()),
-        rpc_method_(rpc_method_name_.c_str(), RpcServiceMethod::StreamType,
-                    channel_),
-        retry_strategy_(retry_strategy) {}
-
   Client(std::shared_ptr<::grpc::Channel> channel)
       : channel_(channel),
         client_context_(common::make_unique<::grpc::ClientContext>()),
@@ -62,15 +55,32 @@ class Client<RpcServiceMethodConcept, ::grpc::internal::RpcMethod::NORMAL_RPC> {
         rpc_method_(rpc_method_name_.c_str(), RpcServiceMethod::StreamType,
                     channel_) {}
 
+  // 'timeout' is used for every 'Write' separately, but multiple retries count
+  // towards a single timeout.
+  Client(std::shared_ptr<::grpc::Channel> channel, common::Duration timeout,
+         RetryStrategy retry_strategy = nullptr)
+      : channel_(channel),
+        client_context_(common::make_unique<::grpc::ClientContext>()),
+        rpc_method_name_(RpcServiceMethod::MethodName()),
+        rpc_method_(rpc_method_name_.c_str(), RpcServiceMethod::StreamType,
+                    channel_),
+        timeout_(timeout),
+        retry_strategy_(retry_strategy) {}
+
   bool Write(const RequestType& request, ::grpc::Status* status = nullptr) {
     ::grpc::Status internal_status;
-    bool result = RetryWithStrategy(retry_strategy_,
-                                    [this, &request, &internal_status] {
-                                      WriteImpl(request, &internal_status);
-                                      return internal_status;
-                                    },
-                                    [this] { Reset(); });
-
+    common::optional<std::chrono::system_clock::time_point> deadline;
+    if (timeout_.has_value()) {
+      deadline = std::chrono::system_clock::now() + timeout_.value();
+    }
+    client_context_ = ResetContext(deadline);
+    bool result = RetryWithStrategy(
+        retry_strategy_,
+        [this, &request, &internal_status] {
+          WriteImpl(request, &internal_status);
+          return internal_status;
+        },
+        [this, deadline] { client_context_ = ResetContext(deadline); });
     if (status != nullptr) {
       *status = internal_status;
     }
@@ -80,8 +90,13 @@ class Client<RpcServiceMethodConcept, ::grpc::internal::RpcMethod::NORMAL_RPC> {
   const ResponseType& response() { return response_; }
 
  private:
-  void Reset() {
-    client_context_ = common::make_unique<::grpc::ClientContext>();
+  static std::unique_ptr<::grpc::ClientContext> ResetContext(
+      common::optional<std::chrono::system_clock::time_point> deadline) {
+    auto context = common::make_unique<::grpc::ClientContext>();
+    if (deadline.has_value()) {
+      context->set_deadline(deadline.value());
+    }
+    return context;
   }
 
   bool WriteImpl(const RequestType& request, ::grpc::Status* status) {
@@ -101,6 +116,7 @@ class Client<RpcServiceMethodConcept, ::grpc::internal::RpcMethod::NORMAL_RPC> {
   std::unique_ptr<::grpc::ClientContext> client_context_;
   const std::string rpc_method_name_;
   const ::grpc::internal::RpcMethod rpc_method_;
+  common::optional<common::Duration> timeout_;
 
   ResponseType response_;
   RetryStrategy retry_strategy_;
@@ -143,10 +159,6 @@ class Client<RpcServiceMethodConcept,
   const ResponseType& response() { return response_; }
 
  private:
-  void Reset() {
-    client_context_ = common::make_unique<::grpc::ClientContext>();
-  }
-
   bool WriteImpl(const RequestType& request, ::grpc::Status* status) {
     InstantiateClientWriterIfNeeded();
     return client_writer_->Write(request);
@@ -204,10 +216,6 @@ class Client<RpcServiceMethodConcept,
   }
 
  private:
-  void Reset() {
-    client_context_ = common::make_unique<::grpc::ClientContext>();
-  }
-
   bool WriteImpl(const RequestType& request, ::grpc::Status* status) {
     InstantiateClientReader(request);
     return true;
@@ -267,10 +275,6 @@ class Client<RpcServiceMethodConcept,
   }
 
  private:
-  void Reset() {
-    client_context_ = common::make_unique<::grpc::ClientContext>();
-  }
-
   bool WriteImpl(const RequestType& request, ::grpc::Status* status) {
     InstantiateClientReaderWriterIfNeeded();
     return client_reader_writer_->Write(request);

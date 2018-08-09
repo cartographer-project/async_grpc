@@ -285,8 +285,9 @@ TEST_F(ServerTest, RetryWithUnrecoverableError) {
   server_->Start();
 
   Client<GetSquareMethod> client(
-      client_channel_, CreateUnlimitedConstantDelayStrategy(
-                           common::FromSeconds(1), {::grpc::INTERNAL}));
+      client_channel_, common::FromSeconds(5),
+      CreateUnlimitedConstantDelayStrategy(common::FromSeconds(1),
+                                           {::grpc::INTERNAL}));
   proto::GetSquareRequest request;
   request.set_input(-11);
   EXPECT_FALSE(client.Write(request));

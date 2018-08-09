@@ -62,6 +62,7 @@ set(ALL_LIBRARY_SRCS
     async_grpc/token_file_credentials.cc)
 
 set(ALL_TESTS
+    async_grpc/client_test.cc
     async_grpc/server_test.cc
     async_grpc/type_traits_test.cc)
 
