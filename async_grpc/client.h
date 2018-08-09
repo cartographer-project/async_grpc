@@ -69,16 +69,18 @@ class Client<RpcServiceMethodConcept, ::grpc::internal::RpcMethod::NORMAL_RPC> {
 
   bool Write(const RequestType& request, ::grpc::Status* status = nullptr) {
     ::grpc::Status internal_status;
+    common::optional<std::chrono::system_clock::time_point> deadline;
     if (timeout_.has_value()) {
-      deadline_ = std::chrono::system_clock::now() + timeout_.value();
+      deadline = std::chrono::system_clock::now() + timeout_.value();
     }
-    Reset();
-    bool result = RetryWithStrategy(retry_strategy_,
-                                    [this, &request, &internal_status] {
-                                      WriteImpl(request, &internal_status);
-                                      return internal_status;
-                                    },
-                                    [this] { Reset(); });
+    client_context_ = ResetContext(deadline);
+    bool result = RetryWithStrategy(
+        retry_strategy_,
+        [this, &request, &internal_status] {
+          WriteImpl(request, &internal_status);
+          return internal_status;
+        },
+        [this, deadline] { client_context_ = ResetContext(deadline); });
     if (status != nullptr) {
       *status = internal_status;
     }
@@ -88,11 +90,13 @@ class Client<RpcServiceMethodConcept, ::grpc::internal::RpcMethod::NORMAL_RPC> {
   const ResponseType& response() { return response_; }
 
  private:
-  void Reset() {
-    client_context_ = common::make_unique<::grpc::ClientContext>();
-    if (deadline_.has_value()) {
-      client_context_->set_deadline(deadline_.value());
+  static std::unique_ptr<::grpc::ClientContext> ResetContext(
+      common::optional<std::chrono::system_clock::time_point> deadline) {
+    auto context = common::make_unique<::grpc::ClientContext>();
+    if (deadline.has_value()) {
+      context->set_deadline(deadline.value());
     }
+    return context;
   }
 
   bool WriteImpl(const RequestType& request, ::grpc::Status* status) {
@@ -113,7 +117,6 @@ class Client<RpcServiceMethodConcept, ::grpc::internal::RpcMethod::NORMAL_RPC> {
   const std::string rpc_method_name_;
   const ::grpc::internal::RpcMethod rpc_method_;
   common::optional<common::Duration> timeout_;
-  common::optional<std::chrono::system_clock::time_point> deadline_;
 
   ResponseType response_;
   RetryStrategy retry_strategy_;
