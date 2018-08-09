@@ -17,6 +17,7 @@
 #ifndef CPP_GRPC_CLIENT_H
 #define CPP_GRPC_CLIENT_H
 
+#include "async_grpc/common/optional.h"
 #include "async_grpc/retry.h"
 #include "async_grpc/rpc_handler_interface.h"
 #include "async_grpc/rpc_service_method_traits.h"
@@ -47,6 +48,17 @@ class Client<RpcServiceMethodConcept, ::grpc::internal::RpcMethod::NORMAL_RPC> {
   using ResponseType = typename RpcServiceMethod::ResponseType;
 
  public:
+  Client(std::shared_ptr<::grpc::Channel> channel, common::Duration timeout,
+         RetryStrategy retry_strategy)
+      : Client(channel, retry_strategy) {
+    timeout_ = timeout;
+  }
+
+  Client(std::shared_ptr<::grpc::Channel> channel, common::Duration timeout)
+      : Client(channel) {
+    timeout_ = timeout;
+  }
+
   Client(std::shared_ptr<::grpc::Channel> channel, RetryStrategy retry_strategy)
       : channel_(channel),
         client_context_(common::make_unique<::grpc::ClientContext>()),
@@ -64,6 +76,9 @@ class Client<RpcServiceMethodConcept, ::grpc::internal::RpcMethod::NORMAL_RPC> {
 
   bool Write(const RequestType& request, ::grpc::Status* status = nullptr) {
     ::grpc::Status internal_status;
+    if (timeout_.has_value()) {
+      Reset();
+    }
     bool result = RetryWithStrategy(retry_strategy_,
                                     [this, &request, &internal_status] {
                                       WriteImpl(request, &internal_status);
@@ -145,6 +160,10 @@ class Client<RpcServiceMethodConcept,
  private:
   void Reset() {
     client_context_ = common::make_unique<::grpc::ClientContext>();
+    if (timeout_.has_value()) {
+      client_context_->set_deadline(std::chrono::system_clock::now() +
+                                    timeout_.value());
+    }
   }
 
   bool WriteImpl(const RequestType& request, ::grpc::Status* status) {
@@ -289,6 +308,7 @@ class Client<RpcServiceMethodConcept,
   std::unique_ptr<::grpc::ClientContext> client_context_;
   const std::string rpc_method_name_;
   const ::grpc::internal::RpcMethod rpc_method_;
+  common::optional<common::Duration> timeout_;
 
   std::unique_ptr<::grpc::ClientReaderWriter<RequestType, ResponseType>>
       client_reader_writer_;
