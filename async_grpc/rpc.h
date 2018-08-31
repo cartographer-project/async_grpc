@@ -107,6 +107,7 @@ class Rpc {
       const RpcHandlerInfo& rpc_handler_info, Service* service,
       WeakPtrFactory weak_ptr_factory);
   std::unique_ptr<Rpc> Clone();
+  void OnConnection();
   void OnRequest();
   void OnReadsDone();
   void OnFinish();

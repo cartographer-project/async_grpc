@@ -37,6 +37,7 @@ namespace async_grpc {
 namespace {
 
 constexpr int kDefaultMaxMessageSize = 10 * 1024 * 1024;  // 10 MB
+constexpr double kDefaultTracingSamplerProbability = 0.01;  // 1 Percent
 
 }  // namespace
 
@@ -56,6 +57,10 @@ class Server {
     std::string server_address;
     int max_receive_message_size = kDefaultMaxMessageSize;
     int max_send_message_size = kDefaultMaxMessageSize;
+    bool enable_tracing = false;
+    double tracing_sampler_probability = kDefaultTracingSamplerProbability;
+    std::string tracing_task_name;
+    std::string tracing_gcp_project_id;
   };
 
  public:
@@ -70,6 +75,11 @@ class Server {
     void SetServerAddress(const std::string& server_address);
     void SetMaxReceiveMessageSize(int max_receive_message_size);
     void SetMaxSendMessageSize(int max_send_message_size);
+    void EnableTracing();
+    void DisableTracing();
+    void SetTracingSamplerProbability(double tracing_sampler_probability);
+    void SetTracingTaskName(const std::string& tracing_task_name);
+    void SetTracingGcpProjectId(const std::string& tracing_gcp_project_id);
 
     template <typename RpcHandlerType>
     void RegisterHandler() {

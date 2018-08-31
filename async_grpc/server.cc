@@ -17,11 +17,19 @@
 #include "async_grpc/server.h"
 
 #include "glog/logging.h"
+#ifdef TRACING_SUPPORT
+#include "opencensus/exporters/trace/stackdriver/stackdriver_exporter.h"
+#include "opencensus/trace/trace_config.h"
+#endif
 
 namespace async_grpc {
 namespace {
 
 const common::Duration kPopEventTimeout = common::FromMilliseconds(100);
+constexpr unsigned int kDefaultTracingMaxAttributes = 128;
+constexpr unsigned int kDefaultTracingMaxAnnotations = 128;
+constexpr unsigned int kDefaultTracingMaxMessageEvents = 128;
+constexpr unsigned int kDefaultTracingMaxLinks = 128;
 
 }  // namespace
 
@@ -45,6 +53,30 @@ void Server::Builder::SetMaxReceiveMessageSize(int max_receive_message_size) {
 void Server::Builder::SetMaxSendMessageSize(int max_send_message_size) {
   CHECK_GT(max_send_message_size, 0) << "max_send_message_size must be larger than 0.";
   options_.max_send_message_size = max_send_message_size;
+}
+
+void Server::Builder::EnableTracing() {
+#ifdef TRACING_SUPPORT
+  options_.enable_tracing = true;
+#else
+  LOG(FATAL) << "Enable tracing support by setting -DTRACING_SUPPORT first.";
+#endif
+}
+
+void Server::Builder::DisableTracing() {
+  options_.enable_tracing = false;
+}
+
+void Server::Builder::SetTracingSamplerProbability(double tracing_sampler_probability) {
+  options_.tracing_sampler_probability = tracing_sampler_probability;
+}
+
+void Server::Builder::SetTracingTaskName(const std::string& tracing_task_name) {
+  options_.tracing_task_name = tracing_task_name;
+}
+
+void Server::Builder::SetTracingGcpProjectId(const std::string& tracing_gcp_project_id) {
+  options_.tracing_gcp_project_id = tracing_gcp_project_id;
 }
 
 std::tuple<std::string, std::string> Server::Builder::ParseMethodFullName(
@@ -134,6 +166,19 @@ void Server::RunEventQueue(EventQueue* event_queue) {
 }
 
 void Server::Start() {
+#ifdef TRACING_SUPPORT
+  if (options_.enable_tracing) {
+    opencensus::exporters::trace::StackdriverExporter::Register(
+        options_.tracing_gcp_project_id);
+    opencensus::trace::TraceConfig::SetCurrentTraceParams(
+        {kDefaultTracingMaxAttributes, kDefaultTracingMaxAnnotations,
+         kDefaultTracingMaxMessageEvents, kDefaultTracingMaxLinks,
+         opencensus::trace::ProbabilitySampler(
+             options_.tracing_sampler_probability)});
+  }
+#endif
+
+
   // Start the gRPC server process.
   server_ = server_builder_.BuildAndStart();
 

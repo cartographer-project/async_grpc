@@ -91,8 +91,7 @@ void Service::HandleNewConnection(Rpc* rpc, bool ok) {
   }
 
   if (ok) {
-    // For request-streaming RPCs ask the client to start sending requests.
-    rpc->RequestStreamingReadIfNeeded();
+    rpc->OnConnection();
   }
 
   // Create new active rpc to handle next connection and register it for the
