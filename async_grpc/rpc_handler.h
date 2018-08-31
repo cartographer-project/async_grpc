@@ -54,8 +54,15 @@ class RpcHandler : public RpcHandlerInterface {
       }
       return false;
     }
+    bool Finish(::grpc::Status status) {
+      if (auto rpc = rpc_.lock()) {
+        rpc->Finish(status);
+        return true;
+      }
+      return false;
+    }
 
-   private:
+  private:
     const std::weak_ptr<Rpc> rpc_;
   };
   void SetExecutionContext(ExecutionContext* execution_context) override {
