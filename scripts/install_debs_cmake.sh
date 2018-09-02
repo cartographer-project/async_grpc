@@ -20,8 +20,14 @@ set -o verbose
 # Install the required libraries that are available as debs.
 sudo apt-get update
 sudo apt-get install -y \
+    build-essential \
+    autoconf \
+    libtool \
+    pkg-config \
+    libgtest-dev \
+    clang \
+    libc++-dev \
     cmake \
-    g++ \
     git \
     google-mock \
     libgflags-dev \

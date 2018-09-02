@@ -47,7 +47,7 @@ def repositories():
 
   _maybe(native.new_http_archive,
       name = "net_zlib_zlib",
-      build_file = "@com_github_cschuet_async_grpc//bazel/third_party:zlib.BUILD",
+      build_file = "@com_github_googlecartographer_async_grpc//bazel/third_party:zlib.BUILD",
       sha256 = "6d4d6640ca3121620995ee255945161821218752b551a1a180f4215f7d124d45",
       strip_prefix = "zlib-cacf7f1d4e3d44d871b605da3b647f07d718623f",
       urls = [
@@ -78,11 +78,10 @@ def repositories():
 
   _maybe(native.http_archive,
       name = "com_github_grpc_grpc",
-      sha256 = "2fdde7d64e6fb1a397bf2aa23aeddcdcf276652d9e48270e94eb0dc94d7c1345",
-      strip_prefix = "grpc-20e7074e4101b4fdbae1764caa952301b38957c4",
+      sha256 = "c747e4d903f7dcf803be53abed4e4efc5d3e96f6c274ed1dfca7a03fa6f4e36b",
+      strip_prefix = "grpc-1.14.2",
       urls = [
-          "https://mirror.bazel.build/github.com/grpc/grpc/archive/20e7074e4101b4fdbae1764caa952301b38957c4.tar.gz",
-          "https://github.com/grpc/grpc/archive/20e7074e4101b4fdbae1764caa952301b38957c4.tar.gz",
+          "https://github.com/grpc/grpc/archive/v1.14.2.tar.gz",
       ],
   )
 
@@ -96,5 +95,5 @@ def repositories():
   )
 
 def _maybe(repo_rule, name, **kwargs):
-  if name not in native.existing_rules():
-    repo_rule(name=name, **kwargs)
+    if name not in native.existing_rules():
+        repo_rule(name=name, **kwargs)

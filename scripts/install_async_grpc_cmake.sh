@@ -17,7 +17,7 @@
 set -o errexit
 set -o verbose
 
-# Build and install Cartographer.
+# Build and install async_grpc.
 cd async_grpc 
 mkdir build
 cd build
