@@ -54,6 +54,13 @@ class RpcHandler : public RpcHandlerInterface {
       }
       return false;
     }
+    bool Finish(const ::grpc::Status& status) {
+      if (auto rpc = rpc_.lock()) {
+        rpc->Finish(status);
+        return true;
+      }
+      return false;
+    }
 
    private:
     const std::weak_ptr<Rpc> rpc_;
