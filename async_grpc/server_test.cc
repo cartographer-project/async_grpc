@@ -109,7 +109,6 @@ class GetSquareHandler : public RpcHandler<GetSquareMethod> {
     }
     auto response = common::make_unique<proto::GetSquareResponse>();
     response->set_output(request.input() * request.input());
-    std::cout << "on request: " << request.input() << std::endl;
     Send(std::move(response));
   }
 };
@@ -310,23 +309,16 @@ TEST_F(ServerTest, AsyncClientUnary) {
   AsyncClient<GetSquareMethod> async_client(
       client_channel_, [&done](const ::grpc::Status& status,
                                const proto::GetSquareResponse* response) {
-        LOG(INFO) << status.error_message() << " code:" << status.error_code();
         EXPECT_TRUE(status.ok());
         EXPECT_EQ(response->output(), 121);
         done = true;
       });
-  LOG(INFO) << "Sending request";
   async_client.WriteAsync(request);
-  LOG(INFO) << "Request sent";
 
   while (!done) {
   }
-
   server_->Shutdown();
-
   CompletionQueuePool::Shutdown();
-
-  LOG(INFO) << "Shut down.";
 }
 
 }  // namespace

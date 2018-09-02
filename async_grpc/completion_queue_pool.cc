@@ -42,7 +42,6 @@ void CompletionQueue::Shutdown() {
 }
 
 void CompletionQueue::RunCompletionQueue() {
-  LOG(INFO) << "CompletionQueue::RunCompletionQueue()";
   bool ok;
   void* tag;
   while (completion_queue_.Next(&tag, &ok)) {
@@ -70,7 +69,6 @@ void CompletionQueuePool::SetNumberCompletionQueues(
   CompletionQueuePool* pool = completion_queue_pool();
   pool->Initialize();
   const unsigned int qid = rand() % pool->completion_queues_.size();
-  LOG(INFO) << "qid: " << qid;
   return pool->completion_queues_.at(qid).completion_queue();
 }
 
@@ -83,23 +81,17 @@ void CompletionQueuePool::Shutdown() {
 
 CompletionQueuePool::CompletionQueuePool()
     : number_completion_queues_(kDefaultNumberCompletionQueues) {
-  LOG(INFO) << "CompletionQueuePool::CompletionQueuePool()";
 }
 
 void CompletionQueuePool::Initialize() {
-  LOG(INFO) << "CompletionQueuePool::Initialize()";
   common::MutexLocker locker(&mutex_);
   if (initialized_) {
     return;
   }
-
   completion_queues_.resize(kDefaultNumberCompletionQueues);
   for (auto& completion_queue : completion_queues_) {
     completion_queue.Start();
   }
-
-  LOG(INFO) << "# queues: " << completion_queues_.size();
-
   initialized_ = true;
 }
 

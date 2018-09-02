@@ -63,22 +63,17 @@ class AsyncClient<RpcServiceMethodConcept,
         finish_event_(ClientEvent::Event::FINISH, this) {}
 
   void WriteAsync(const RequestType& request) {
-    LOG(INFO) << "1";
     response_reader_ =
         std::unique_ptr<::grpc::ClientAsyncResponseReader<ResponseType>>(
             ::grpc::internal::ClientAsyncResponseReaderFactory<
                 ResponseType>::Create(channel_.get(), completion_queue_,
                                       rpc_method_, &client_context_, request,
                                       /*start=*/false));
-    LOG(INFO) << "2";
     response_reader_->StartCall();
-    LOG(INFO) << "3";
     response_reader_->Finish(&response_, &status_, (void*)&finish_event_);
-    LOG(INFO) << "4";
   }
 
   void HandleEvent(const ClientEvent& client_event) override {
-    LOG(INFO) << "Event " << (client_event.ok ? "OK" : "FAILED");
     switch (client_event.event) {
       case ClientEvent::Event::FINISH:
         HandleFinishEvent(client_event);
@@ -89,7 +84,6 @@ class AsyncClient<RpcServiceMethodConcept,
   }
 
   void HandleFinishEvent(const ClientEvent& client_event) {
-    LOG(INFO) << "Finish";
     if (callback_) {
       callback_(status_, status_.ok() ? &response_ : nullptr);
     }
