@@ -54,7 +54,7 @@ class RpcHandler : public RpcHandlerInterface {
       }
       return false;
     }
-    bool Finish(::grpc::Status status) {
+    bool Finish(const ::grpc::Status& status) {
       if (auto rpc = rpc_.lock()) {
         rpc->Finish(status);
         return true;
