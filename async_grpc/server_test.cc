@@ -18,6 +18,7 @@
 
 #include <future>
 
+#include "async_grpc/async_client.h"
 #include "async_grpc/client.h"
 #include "async_grpc/execution_context.h"
 #include "async_grpc/proto/math_service.pb.h"
@@ -293,6 +294,39 @@ TEST_F(ServerTest, RetryWithUnrecoverableError) {
   EXPECT_FALSE(client.Write(request));
 
   server_->Shutdown();
+}
+
+TEST_F(ServerTest, AsyncClientUnary) {
+  server_->Start();
+
+  Client<GetSquareMethod> client(client_channel_);
+  proto::GetSquareRequest request;
+  request.set_input(11);
+  EXPECT_TRUE(client.Write(request));
+  EXPECT_EQ(client.response().output(), 121);
+
+  bool done = false;
+
+  AsyncClient<GetSquareMethod> async_client(
+      client_channel_, [&done](const ::grpc::Status& status,
+                               const proto::GetSquareResponse* response) {
+        LOG(INFO) << status.error_message() << " code:" << status.error_code();
+        EXPECT_TRUE(status.ok());
+        EXPECT_EQ(response->output(), 121);
+        done = true;
+      });
+  LOG(INFO) << "Sending request";
+  async_client.WriteAsync(request);
+  LOG(INFO) << "Request sent";
+
+  while (!done) {
+  }
+
+  server_->Shutdown();
+
+  CompletionQueuePool::Shutdown();
+
+  LOG(INFO) << "Shut down.";
 }
 
 }  // namespace
