@@ -62,7 +62,7 @@ class RpcHandler : public RpcHandlerInterface {
       return false;
     }
 
-  private:
+   private:
     const std::weak_ptr<Rpc> rpc_;
   };
   void SetExecutionContext(ExecutionContext* execution_context) override {
