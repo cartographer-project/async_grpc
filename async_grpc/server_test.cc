@@ -16,7 +16,9 @@
 
 #include "async_grpc/server.h"
 
+#include <chrono>
 #include <future>
+#include <thread>
 
 #include "async_grpc/async_client.h"
 #include "async_grpc/client.h"
@@ -298,14 +300,7 @@ TEST_F(ServerTest, RetryWithUnrecoverableError) {
 TEST_F(ServerTest, AsyncClientUnary) {
   server_->Start();
 
-  Client<GetSquareMethod> client(client_channel_);
-  proto::GetSquareRequest request;
-  request.set_input(11);
-  EXPECT_TRUE(client.Write(request));
-  EXPECT_EQ(client.response().output(), 121);
-
   bool done = false;
-
   AsyncClient<GetSquareMethod> async_client(
       client_channel_, [&done](const ::grpc::Status& status,
                                const proto::GetSquareResponse* response) {
@@ -313,10 +308,13 @@ TEST_F(ServerTest, AsyncClientUnary) {
         EXPECT_EQ(response->output(), 121);
         done = true;
       });
+  proto::GetSquareRequest request;
+  request.set_input(11);
   async_client.WriteAsync(request);
-
   while (!done) {
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
   }
+
   server_->Shutdown();
   CompletionQueuePool::Shutdown();
 }
