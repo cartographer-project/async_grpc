@@ -300,20 +300,28 @@ TEST_F(ServerTest, RetryWithUnrecoverableError) {
 TEST_F(ServerTest, AsyncClientUnary) {
   server_->Start();
 
+  std::mutex m;
+  std::condition_variable cv;
   bool done = false;
+
   AsyncClient<GetSquareMethod> async_client(
-      client_channel_, [&done](const ::grpc::Status& status,
-                               const proto::GetSquareResponse* response) {
+      client_channel_,
+      [&done, &m, &cv](const ::grpc::Status& status,
+                       const proto::GetSquareResponse* response) {
         EXPECT_TRUE(status.ok());
         EXPECT_EQ(response->output(), 121);
-        done = true;
+        {
+          std::lock_guard<std::mutex> lock(m);
+          done = true;
+        }
+        cv.notify_all();
       });
   proto::GetSquareRequest request;
   request.set_input(11);
   async_client.WriteAsync(request);
-  while (!done) {
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
-  }
+
+  std::unique_lock<std::mutex> lock(m);
+  cv.wait(lock, [&done] { return done; });
 
   server_->Shutdown();
   CompletionQueuePool::Shutdown();
