@@ -93,16 +93,6 @@ def repositories():
 
     _maybe(
         native.http_archive,
-        name = "com_github_jupp0r_prometheus_cpp",
-        sha256 = "0d3e999dfbfc49bb117698154a01dac26fb59e77d0354ccb81107a6da7b014d0",
-        strip_prefix = "prometheus-cpp-8330b3f753fb774c9e0567baaac20ffb7042723b",
-        urls = [
-            "https://github.com/jupp0r/prometheus-cpp/archive/8330b3f753fb774c9e0567baaac20ffb7042723b.tar.gz",
-        ],
-    )
-
-    _maybe(
-        native.http_archive,
         name = "com_github_census_instrumentation_opencensus_cpp",
         strip_prefix = "opencensus-cpp-6202fb80e26f7e9780167a0f12c81834e16cf05a",
         urls = [
@@ -124,40 +114,7 @@ def repositories():
         name = "com_github_curl",
         urls = ["https://github.com/curl/curl/archive/e2ef8d6fa11b2345e10b89db525920f2a0d5fd79.zip"],
         strip_prefix = "curl-e2ef8d6fa11b2345e10b89db525920f2a0d5fd79",
-        build_file_content =
-            """
-load("@io_opencensus_cpp//opencensus:curl.bzl", "CURL_COPTS")
-package(features = ['no_copts_tokenization'])
-
-config_setting(
-    name = "windows",
-    values = {"cpu": "x64_windows"},
-    visibility = [ "//visibility:private" ],
-)
-
-config_setting(
-    name = "osx",
-    values = {"cpu": "darwin"},
-    visibility = [ "//visibility:private" ],
-)
-
-cc_library(
-    name = "curl",
-    srcs = glob([
-        "lib/**/*.c",
-    ]),
-    hdrs = glob([
-        "include/curl/*.h",
-        "lib/**/*.h",
-    ]),
-    includes = ["include/", "lib/"],
-    copts = CURL_COPTS + [
-        "-DOS=\\"os\\"",
-        "-DCURL_EXTERN_SYMBOL=__attribute__((__visibility__(\\"default\\")))",
-    ],
-    visibility = ["//visibility:public"],
-)
-""",
+        build_file = "@com_github_googlecartographer_async_grpc//bazel/third_party:curl.BUILD",
     )
 
     _maybe(

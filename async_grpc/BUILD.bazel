@@ -61,7 +61,7 @@ cc_library(
     ]),
     copts = ["-Wno-sign-compare"],
     includes = ["."],
-    defines = ["TRACING_SUPPORT"],
+    defines = ["BUILD_TRACING=1"],
     deps = [
         ":cc_protos",
         "@com_github_grpc_grpc//:grpc++",

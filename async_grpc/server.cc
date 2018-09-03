@@ -17,7 +17,7 @@
 #include "async_grpc/server.h"
 
 #include "glog/logging.h"
-#ifdef TRACING_SUPPORT
+#if BUILD_TRACING
 #include "opencensus/exporters/trace/stackdriver/stackdriver_exporter.h"
 #include "opencensus/trace/trace_config.h"
 #endif
@@ -56,10 +56,10 @@ void Server::Builder::SetMaxSendMessageSize(int max_send_message_size) {
 }
 
 void Server::Builder::EnableTracing() {
-#ifdef TRACING_SUPPORT
+#if BUILD_TRACING
   options_.enable_tracing = true;
 #else
-  LOG(FATAL) << "Enable tracing support by setting -DTRACING_SUPPORT first.";
+  LOG(FATAL) << "Enable tracing support by compiling with -DBUILD_TRACING=1.";
 #endif
 }
 
@@ -166,7 +166,7 @@ void Server::RunEventQueue(EventQueue* event_queue) {
 }
 
 void Server::Start() {
-#ifdef TRACING_SUPPORT
+#if BUILD_TRACING
   if (options_.enable_tracing) {
     opencensus::exporters::trace::StackdriverExporter::Register(
         options_.tracing_gcp_project_id);
