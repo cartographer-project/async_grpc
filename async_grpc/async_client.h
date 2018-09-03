@@ -24,7 +24,7 @@
 #include "completion_queue_pool.h"
 #include "glog/logging.h"
 #include "grpc++/grpc++.h"
-#include "include/grpcpp/impl/codegen/async_unary_call.h"
+#include "grpc++/impl/codegen/async_unary_call.h"
 
 namespace async_grpc {
 
