@@ -21,14 +21,19 @@
 #include "async_grpc/rpc.h"
 #include "async_grpc/rpc_handler_interface.h"
 #include "async_grpc/rpc_service_method_traits.h"
-#include "google/protobuf/message.h"
+#include "async_grpc/span.h"
 #include "glog/logging.h"
+#include "google/protobuf/message.h"
 #include "grpc++/grpc++.h"
 #if BUILD_TRACING
-#include "opencensus/trace/span.h"
+#include "async_grpc/opencensus_span.h"
 #endif
 
 namespace async_grpc {
+
+// extern thread_local Span* rpc_span;
+
+Span* GetSpan();
 
 template <typename RpcServiceMethodConcept>
 class RpcHandler : public RpcHandlerInterface {
@@ -68,12 +73,14 @@ class RpcHandler : public RpcHandlerInterface {
 
 #if BUILD_TRACING
   RpcHandler()
-      : trace_span_(opencensus::trace::Span::StartSpan(
-            RpcServiceMethodConcept::MethodName())) {}
-  virtual ~RpcHandler() { trace_span_.End(); }
+      : span_(
+            OpencensusSpan::StartSpan(RpcServiceMethodConcept::MethodName())) {
+    rpc_span = span_.get();
+  }
+  virtual ~RpcHandler() { span_->End(); }
 
   // TODO(cschuet): consider wrapping to remove opencensus from API.
-  opencensus::trace::Span* trace_span() { return &trace_span_; }
+  Span* trace_span() { return span_.get(); }
 #endif
 
   void SetExecutionContext(ExecutionContext* execution_context) override {
@@ -88,7 +95,7 @@ class RpcHandler : public RpcHandlerInterface {
   void Finish(::grpc::Status status) {
     rpc_->Finish(status);
 #if BUILD_TRACING
-    trace_span_.SetStatus((opencensus::trace::StatusCode)status.error_code());
+    span_->SetStatus(status);
 #endif
   }
   void Send(std::unique_ptr<ResponseType> response) {
@@ -107,9 +114,7 @@ class RpcHandler : public RpcHandlerInterface {
  private:
   Rpc* rpc_;
   ExecutionContext* execution_context_;
-#if BUILD_TRACING
-  opencensus::trace::Span trace_span_;
-#endif
+  std::unique_ptr<Span> span_;
 };
 
 }  // namespace async_grpc
