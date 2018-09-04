@@ -15,7 +15,6 @@
  */
 
 #include "async_grpc/opencensus_span.h"
-#include "async_grpc/common/make_unique.h"
 
 #if BUILD_TRACING
 
