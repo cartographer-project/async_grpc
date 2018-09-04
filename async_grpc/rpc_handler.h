@@ -70,9 +70,7 @@ class RpcHandler : public RpcHandlerInterface {
 #if BUILD_TRACING
   RpcHandler()
       : span_(
-            OpencensusSpan::StartSpan(RpcServiceMethodConcept::MethodName())) {
-    rpc_span = span_.get();
-  }
+            OpencensusSpan::StartSpan(RpcServiceMethodConcept::MethodName())) {}
   virtual ~RpcHandler() { span_->End(); }
 
   // TODO(cschuet): consider wrapping to remove opencensus from API.
