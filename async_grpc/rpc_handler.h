@@ -55,9 +55,13 @@ class RpcHandler : public RpcHandlerInterface {
       }
       return false;
     }
-    bool Finish(const ::grpc::Status& status) {
+    bool Finish(const ::grpc::Status& status) const {
       if (auto rpc = rpc_.lock()) {
         rpc->Finish(status);
+        auto* span = rpc->handler()->trace_span();
+        if (span) {
+          span->SetStatus(status);
+        }
         return true;
       }
       return false;
@@ -72,11 +76,9 @@ class RpcHandler : public RpcHandlerInterface {
       : span_(
             OpencensusSpan::StartSpan(RpcServiceMethodConcept::MethodName())) {}
   virtual ~RpcHandler() { span_->End(); }
-
-  // TODO(cschuet): consider wrapping to remove opencensus from API.
-  Span* trace_span() { return span_.get(); }
 #endif
 
+  Span* trace_span() override { return span_.get(); }
   void SetExecutionContext(ExecutionContext* execution_context) override {
     execution_context_ = execution_context;
   }
