@@ -31,10 +31,6 @@
 
 namespace async_grpc {
 
-// extern thread_local Span* rpc_span;
-
-Span* GetSpan();
-
 template <typename RpcServiceMethodConcept>
 class RpcHandler : public RpcHandlerInterface {
  public:
