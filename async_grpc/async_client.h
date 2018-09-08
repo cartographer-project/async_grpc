@@ -133,7 +133,6 @@ class AsyncClient<RpcServiceMethodConcept,
             channel_.get(), completion_queue_, rpc_method_, &client_context_,
             request,
             /*start=*/true, (void*)&write_event_));
-    LOG(INFO) << "Write started.";
   }
 
   void HandleEvent(const ClientEvent& client_event) override {
@@ -153,15 +152,15 @@ class AsyncClient<RpcServiceMethodConcept,
   }
 
   void HandleWriteEvent(const ClientEvent& client_event) {
-    LOG(INFO) << "HandleWriteEvent()";
     if (!client_event.ok) {
+      LOG(ERROR) << "Write failed.";
       ::grpc::Status status(::grpc::INTERNAL, "Write failed.");
       if (callback_) {
         callback_(status, nullptr);
         callback_ = nullptr;
       }
       finish_status_ = status;
-      response_reader_->Finish(&finish_status_, (void*)&finish_event_);
+      response_reader_->FinishWithError(&finish_status_, (void*)&finish_event_);
       return;
     }
 
@@ -183,6 +182,9 @@ class AsyncClient<RpcServiceMethodConcept,
 
   void HandleFinishEvent(const ClientEvent& client_event) {
     if (callback_) {
+      if (!client_event.ok) {
+        LOG(ERROR) << "Finish failed.";
+      }
       callback_(client_event.ok
                     ? ::grpc::Status()
                     : ::grpc::Status(::grpc::INTERNAL, "Finish failed"),
