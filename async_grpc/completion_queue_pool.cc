@@ -88,7 +88,7 @@ void CompletionQueuePool::Initialize() {
   if (initialized_) {
     return;
   }
-  completion_queues_.resize(kDefaultNumberCompletionQueues);
+  completion_queues_.resize(number_completion_queues_);
   for (auto& completion_queue : completion_queues_) {
     completion_queue.Start();
   }
