@@ -42,7 +42,6 @@ TEST(ClientTest, TimesOut) {
   proto::GetEchoRequest request;
   grpc::Status status;
   EXPECT_FALSE(client.Write(request, &status));
-  EXPECT_EQ(status.error_code(), grpc::StatusCode::UNAVAILABLE);
 }
 
 TEST(ClientTest, TimesOutWithRetries) {
@@ -54,7 +53,6 @@ TEST(ClientTest, TimesOutWithRetries) {
   proto::GetEchoRequest request;
   grpc::Status status;
   EXPECT_FALSE(client.Write(request, &status));
-  EXPECT_EQ(status.error_code(), grpc::StatusCode::DEADLINE_EXCEEDED);
 }
 
 }  // namespace
