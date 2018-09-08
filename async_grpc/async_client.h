@@ -160,7 +160,7 @@ class AsyncClient<RpcServiceMethodConcept,
         callback_ = nullptr;
       }
       finish_status_ = status;
-      response_reader_->FinishWithError(&finish_status_, (void*)&finish_event_);
+      response_reader_->Finish(&finish_status_, (void*)&finish_event_);
       return;
     }
 
