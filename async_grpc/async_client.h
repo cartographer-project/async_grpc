@@ -24,6 +24,7 @@
 #include "completion_queue_pool.h"
 #include "glog/logging.h"
 #include "grpc++/grpc++.h"
+#include "grpc++/impl/codegen/async_stream.h"
 #include "grpc++/impl/codegen/async_unary_call.h"
 
 namespace async_grpc {
@@ -101,6 +102,109 @@ class AsyncClient<RpcServiceMethodConcept,
   ClientEvent finish_event_;
   ::grpc::Status status_;
   ResponseType response_;
+};
+
+template <typename RpcServiceMethodConcept>
+class AsyncClient<RpcServiceMethodConcept,
+                  ::grpc::internal::RpcMethod::SERVER_STREAMING>
+    : public AsyncClientInterface {
+  using RpcServiceMethod = RpcServiceMethodTraits<RpcServiceMethodConcept>;
+  using RequestType = typename RpcServiceMethod::RequestType;
+  using ResponseType = typename RpcServiceMethod::ResponseType;
+  using CallbackType =
+      std::function<void(const ::grpc::Status&, const ResponseType*)>;
+
+ public:
+  AsyncClient(std::shared_ptr<::grpc::Channel> channel, CallbackType callback)
+      : channel_(channel),
+        callback_(callback),
+        completion_queue_(CompletionQueuePool::GetCompletionQueue()),
+        rpc_method_name_(RpcServiceMethod::MethodName()),
+        rpc_method_(rpc_method_name_.c_str(), RpcServiceMethod::StreamType,
+                    channel_),
+        write_event_(ClientEvent::Event::WRITE, this),
+        read_event_(ClientEvent::Event::READ, this),
+        finish_event_(ClientEvent::Event::FINISH, this) {}
+
+  void WriteAsync(const RequestType& request) {
+    // Start the call.
+    response_reader_ = std::unique_ptr<::grpc::ClientAsyncReader<ResponseType>>(
+        ::grpc::internal::ClientAsyncReaderFactory<ResponseType>::Create(
+            channel_.get(), completion_queue_, rpc_method_, &client_context_,
+            request,
+            /*start=*/true, (void*)&write_event_));
+    LOG(INFO) << "Write started.";
+  }
+
+  void HandleEvent(const ClientEvent& client_event) override {
+    switch (client_event.event) {
+      case ClientEvent::Event::WRITE:
+        HandleWriteEvent(client_event);
+        break;
+      case ClientEvent::Event::READ:
+        HandleReadEvent(client_event);
+        break;
+      case ClientEvent::Event::FINISH:
+        HandleFinishEvent(client_event);
+        break;
+      default:
+        LOG(FATAL) << "Unhandled event type.";
+    }
+  }
+
+  void HandleWriteEvent(const ClientEvent& client_event) {
+    LOG(INFO) << "HandleWriteEvent()";
+    if (!client_event.ok) {
+      ::grpc::Status status(::grpc::INTERNAL, "Write failed.");
+      if (callback_) {
+        callback_(status, nullptr);
+        callback_ = nullptr;
+      }
+      finish_status_ = status;
+      response_reader_->Finish(&finish_status_, (void*)&finish_event_);
+      return;
+    }
+
+    response_reader_->Read(&response_, (void*)&read_event_);
+  }
+
+  void HandleReadEvent(const ClientEvent& client_event) {
+    if (client_event.ok) {
+      if (callback_) {
+        callback_(::grpc::Status(), &response_);
+        if (!client_event.ok) callback_ = nullptr;
+      }
+      response_reader_->Read(&response_, (void*)&read_event_);
+    } else {
+      finish_status_ = ::grpc::Status();
+      response_reader_->Finish(&finish_status_, (void*)&finish_event_);
+    }
+  }
+
+  void HandleFinishEvent(const ClientEvent& client_event) {
+    if (callback_) {
+      callback_(client_event.ok
+                    ? ::grpc::Status()
+                    : ::grpc::Status(::grpc::INTERNAL, "Finish failed"),
+                nullptr);
+      callback_ = nullptr;
+    }
+  }
+
+ private:
+  ::grpc::ClientContext client_context_;
+  std::shared_ptr<::grpc::Channel> channel_;
+  CallbackType callback_;
+  ::grpc::CompletionQueue* completion_queue_;
+  const std::string rpc_method_name_;
+  const ::grpc::internal::RpcMethod rpc_method_;
+  std::unique_ptr<::grpc::ClientAsyncReader<ResponseType>> response_reader_;
+  ClientEvent write_event_;
+  ClientEvent read_event_;
+  ClientEvent finish_event_;
+  ::grpc::Status status_;
+  ResponseType response_;
+  ::grpc::Status finish_status_;
 };
 
 }  // namespace async_grpc

@@ -179,21 +179,23 @@ class ServerTest : public ::testing::Test {
 
     client_channel_ = ::grpc::CreateChannel(
         kServerAddress, ::grpc::InsecureChannelCredentials());
+
+    server_->SetExecutionContext(common::make_unique<MathServerContext>());
+    server_->Start();
+  }
+
+  void TearDown() override {
+    server_->Shutdown();
+    CompletionQueuePool::Shutdown();
   }
 
   std::unique_ptr<Server> server_;
   std::shared_ptr<::grpc::Channel> client_channel_;
 };
 
-TEST_F(ServerTest, StartAndStopServerTest) {
-  server_->Start();
-  server_->Shutdown();
-}
+TEST_F(ServerTest, StartAndStopServerTest) {}
 
 TEST_F(ServerTest, ProcessRpcStreamTest) {
-  server_->SetExecutionContext(common::make_unique<MathServerContext>());
-  server_->Start();
-
   Client<GetSumMethod> client(client_channel_);
   for (int i = 0; i < 3; ++i) {
     proto::GetSumRequest request;
@@ -203,25 +205,17 @@ TEST_F(ServerTest, ProcessRpcStreamTest) {
   EXPECT_TRUE(client.StreamWritesDone());
   EXPECT_TRUE(client.StreamFinish().ok());
   EXPECT_EQ(client.response().output(), 33);
-
-  server_->Shutdown();
 }
 
 TEST_F(ServerTest, ProcessUnaryRpcTest) {
-  server_->Start();
-
   Client<GetSquareMethod> client(client_channel_);
   proto::GetSquareRequest request;
   request.set_input(11);
   EXPECT_TRUE(client.Write(request));
   EXPECT_EQ(client.response().output(), 121);
-
-  server_->Shutdown();
 }
 
 TEST_F(ServerTest, ProcessBidiStreamingRpcTest) {
-  server_->Start();
-
   Client<GetRunningSumMethod> client(client_channel_);
   for (int i = 0; i < 3; ++i) {
     proto::GetSumRequest request;
@@ -237,14 +231,9 @@ TEST_F(ServerTest, ProcessBidiStreamingRpcTest) {
   }
   EXPECT_TRUE(expected_responses.empty());
   EXPECT_TRUE(client.StreamFinish().ok());
-
-  server_->Shutdown();
 }
 
 TEST_F(ServerTest, WriteFromOtherThread) {
-  server_->SetExecutionContext(common::make_unique<MathServerContext>());
-  server_->Start();
-
   Server* server = server_.get();
   std::thread response_thread([server]() {
     std::future<EchoResponder> responder_future =
@@ -260,13 +249,9 @@ TEST_F(ServerTest, WriteFromOtherThread) {
   EXPECT_TRUE(client.Write(request));
   response_thread.join();
   EXPECT_EQ(client.response().output(), 13);
-
-  server_->Shutdown();
 }
 
 TEST_F(ServerTest, ProcessServerStreamingRpcTest) {
-  server_->Start();
-
   Client<GetSequenceMethod> client(client_channel_);
   proto::GetSequenceRequest request;
   request.set_input(12);
@@ -279,13 +264,9 @@ TEST_F(ServerTest, ProcessServerStreamingRpcTest) {
   }
   EXPECT_FALSE(client.StreamRead(&response));
   EXPECT_TRUE(client.StreamFinish().ok());
-
-  server_->Shutdown();
 }
 
 TEST_F(ServerTest, RetryWithUnrecoverableError) {
-  server_->Start();
-
   Client<GetSquareMethod> client(
       client_channel_, common::FromSeconds(5),
       CreateUnlimitedConstantDelayStrategy(common::FromSeconds(1),
@@ -293,13 +274,9 @@ TEST_F(ServerTest, RetryWithUnrecoverableError) {
   proto::GetSquareRequest request;
   request.set_input(-11);
   EXPECT_FALSE(client.Write(request));
-
-  server_->Shutdown();
 }
 
 TEST_F(ServerTest, AsyncClientUnary) {
-  server_->Start();
-
   std::mutex m;
   std::condition_variable cv;
   bool done = false;
@@ -322,9 +299,38 @@ TEST_F(ServerTest, AsyncClientUnary) {
 
   std::unique_lock<std::mutex> lock(m);
   cv.wait(lock, [&done] { return done; });
+}
 
-  server_->Shutdown();
-  CompletionQueuePool::Shutdown();
+TEST_F(ServerTest, AsyncClientServerStreaming) {
+  std::mutex m;
+  std::condition_variable cv;
+  bool done = false;
+  int counter = 0;
+
+  AsyncClient<GetSequenceMethod> async_client(
+      client_channel_,
+      [&done, &m, &cv, &counter](const ::grpc::Status& status,
+                                 const proto::GetSequenceResponse* response) {
+        LOG(INFO) << status.error_code() << " " << status.error_message();
+        LOG(INFO) << (response ? response->DebugString() : "(nullptr)");
+        EXPECT_TRUE(status.ok());
+
+        if (!response) {
+          {
+            std::lock_guard<std::mutex> lock(m);
+            done = true;
+          }
+          cv.notify_all();
+        } else {
+          EXPECT_EQ(response->output(), counter++);
+        }
+      });
+  proto::GetSequenceRequest request;
+  request.set_input(10);
+  async_client.WriteAsync(request);
+
+  std::unique_lock<std::mutex> lock(m);
+  cv.wait(lock, [&done] { return done; });
 }
 
 }  // namespace

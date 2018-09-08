@@ -72,15 +72,27 @@ void CompletionQueuePool::SetNumberCompletionQueues(
   return pool->completion_queues_.at(qid).completion_queue();
 }
 
+void CompletionQueuePool::Start() {
+  CompletionQueuePool* pool = completion_queue_pool();
+  pool->Initialize();
+}
+
 void CompletionQueuePool::Shutdown() {
+  LOG(INFO) << "Shutting down CompletionQueuePool";
   CompletionQueuePool* pool = completion_queue_pool();
   for (size_t i = 0; i < pool->completion_queues_.size(); ++i) {
     pool->completion_queues_.at(i).Shutdown();
   }
+  pool->completion_queues_.clear();
+  pool->initialized_ = false;
 }
 
 CompletionQueuePool::CompletionQueuePool()
     : number_completion_queues_(kDefaultNumberCompletionQueues) {
+}
+
+CompletionQueuePool::~CompletionQueuePool() {
+  LOG(INFO) << "~CompletionQueuePool";
 }
 
 void CompletionQueuePool::Initialize() {

@@ -29,7 +29,7 @@ namespace async_grpc {
 class AsyncClientInterface;
 
 struct ClientEvent {
-  enum class Event { FINISH = 0 };
+  enum class Event { FINISH = 0, READ = 1, WRITE = 2 };
   ClientEvent(Event event, AsyncClientInterface* async_client)
       : event(event), async_client(async_client) {}
   Event event;
@@ -56,6 +56,7 @@ class CompletionQueue {
 class CompletionQueuePool {
  public:
   static void SetNumberCompletionQueues(size_t number_completion_queues);
+  static void Start();
   static void Shutdown();
 
   // Returns a random completion queue.
@@ -65,7 +66,7 @@ class CompletionQueuePool {
   using CompletionQueueRunner = std::function<void(::grpc::CompletionQueue*)>;
 
   CompletionQueuePool();
-  ~CompletionQueuePool() = default;
+  ~CompletionQueuePool();
 
   void Initialize();
   static CompletionQueuePool* completion_queue_pool();
