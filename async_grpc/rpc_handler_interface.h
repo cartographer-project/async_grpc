@@ -19,6 +19,7 @@
 
 #include "async_grpc/common/make_unique.h"
 #include "async_grpc/execution_context.h"
+#include "async_grpc/span.h"
 #include "google/protobuf/message.h"
 #include "grpc++/grpc++.h"
 
@@ -35,6 +36,7 @@ class RpcHandlerInterface {
       const ::google::protobuf::Message* request) = 0;
   virtual void OnReadsDone(){};
   virtual void OnFinish(){};
+  virtual Span* trace_span() = 0;
   template <class RpcHandlerType>
   static std::unique_ptr<RpcHandlerType> Instantiate() {
     return common::make_unique<RpcHandlerType>();
