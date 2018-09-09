@@ -26,6 +26,7 @@
 #include "grpc++/grpc++.h"
 #include "grpc++/impl/codegen/async_stream.h"
 #include "grpc++/impl/codegen/async_unary_call.h"
+#include "grpc++/impl/codegen/proto_utils.h"
 
 namespace async_grpc {
 
