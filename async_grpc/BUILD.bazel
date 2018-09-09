@@ -61,6 +61,30 @@ cc_library(
     ]),
     copts = ["-Wno-sign-compare"],
     includes = ["."],
+    defines = ["BUILD_TRACING=0"],
+    deps = [
+        ":cc_protos",
+        "@com_github_grpc_grpc//:grpc++",
+        "@com_google_glog//:glog",
+        "@com_google_protobuf//:cc_wkt_protos",
+    ],
+)
+
+cc_library(
+    name = "async_grpc_tracing",
+    srcs = glob(
+        [
+            "**/*.cc",
+        ],
+        exclude = [
+            "**/*_test.cc",
+        ],
+    ),
+    hdrs = glob([
+        "**/*.h",
+    ]),
+    copts = ["-Wno-sign-compare"],
+    includes = ["."],
     defines = ["BUILD_TRACING=1"],
     deps = [
         ":cc_protos",
