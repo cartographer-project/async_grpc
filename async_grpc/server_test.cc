@@ -330,6 +330,7 @@ TEST_F(ServerTest, AsyncClientServerStreaming) {
   async_client.WriteAsync(request);
 
   std::unique_lock<std::mutex> lock(m);
+  LOG(INFO) << "Waiting for responses...";
   cv.wait(lock, [&done] { return done; });
 }
 

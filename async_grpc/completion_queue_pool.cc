@@ -80,6 +80,7 @@ void CompletionQueuePool::Start() {
 void CompletionQueuePool::Shutdown() {
   LOG(INFO) << "Shutting down CompletionQueuePool";
   CompletionQueuePool* pool = completion_queue_pool();
+  common::MutexLocker locker(&pool->mutex_);
   for (size_t i = 0; i < pool->completion_queues_.size(); ++i) {
     pool->completion_queues_.at(i).Shutdown();
   }

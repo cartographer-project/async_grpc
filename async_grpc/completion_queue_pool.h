@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef CPP_GRPC_COMMON_COMPLETION_QUEUE_POOL_H_
-#define CPP_GRPC_COMMON_COMPLETION_QUEUE_POOL_H_
+#ifndef ASYNC_GRPC_COMMON_COMPLETION_QUEUE_POOL_H_
+#define ASYNC_GRPC_COMMON_COMPLETION_QUEUE_POOL_H_
 
 #include <memory>
 #include <thread>
@@ -28,16 +28,17 @@ namespace async_grpc {
 
 class AsyncClientInterface;
 
-struct ClientEvent {
-  enum class Event { FINISH = 0, READ = 1, WRITE = 2 };
-  ClientEvent(Event event, AsyncClientInterface* async_client)
-      : event(event), async_client(async_client) {}
-  Event event;
-  AsyncClientInterface* async_client;
-  bool ok = false;
-};
-
 class CompletionQueue {
+ public:
+  struct ClientEvent {
+    enum class Event { FINISH = 0, READ = 1, WRITE = 2 };
+    ClientEvent(Event event, AsyncClientInterface* async_client)
+        : event(event), async_client(async_client) {}
+    Event event;
+    AsyncClientInterface* async_client;
+    bool ok = false;
+  };
+
  public:
   CompletionQueue() = default;
 
@@ -53,6 +54,7 @@ class CompletionQueue {
   std::unique_ptr<std::thread> thread_;
 };
 
+// TODO(cschuet): Add unit test for CompletionQueuePool.
 class CompletionQueuePool {
  public:
   static void SetNumberCompletionQueues(size_t number_completion_queues);
@@ -63,8 +65,6 @@ class CompletionQueuePool {
   static ::grpc::CompletionQueue* GetCompletionQueue();
 
  private:
-  using CompletionQueueRunner = std::function<void(::grpc::CompletionQueue*)>;
-
   CompletionQueuePool();
   ~CompletionQueuePool();
 
@@ -79,4 +79,4 @@ class CompletionQueuePool {
 
 }  // namespace async_grpc
 
-#endif  // CPP_GRPC_COMMON_COMPLETION_QUEUE_POOL_H_
+#endif  // ASYNC_GRPC_COMMON_COMPLETION_QUEUE_POOL_H_

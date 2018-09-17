@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef CPP_GRPC_ASYNC_CLIENT_H
-#define CPP_GRPC_ASYNC_CLIENT_H
+#ifndef ASYNC_GRPC_ASYNC_CLIENT_H
+#define ASYNC_GRPC_ASYNC_CLIENT_H
 
 #include <memory>
 
@@ -33,16 +33,20 @@ namespace async_grpc {
 class ClientEvent;
 
 class AsyncClientInterface {
+  friend class CompletionQueue;
+
  public:
   virtual ~AsyncClientInterface() = default;
 
-  virtual void HandleEvent(const ClientEvent& client_event) = 0;
+ private:
+  virtual void HandleEvent(
+      const CompletionQueue::ClientEvent& client_event) = 0;
 };
 
 template <typename RpcServiceMethodConcept,
           ::grpc::internal::RpcMethod::RpcType StreamType =
               RpcServiceMethodTraits<RpcServiceMethodConcept>::StreamType>
-class AsyncClient : public AsyncClientInterface {};
+class AsyncClient {};
 
 template <typename RpcServiceMethodConcept>
 class AsyncClient<RpcServiceMethodConcept,
@@ -62,7 +66,7 @@ class AsyncClient<RpcServiceMethodConcept,
         rpc_method_name_(RpcServiceMethod::MethodName()),
         rpc_method_(rpc_method_name_.c_str(), RpcServiceMethod::StreamType,
                     channel_),
-        finish_event_(ClientEvent::Event::FINISH, this) {}
+        finish_event_(CompletionQueue::ClientEvent::Event::FINISH, this) {}
 
   void WriteAsync(const RequestType& request) {
     response_reader_ =
@@ -75,17 +79,17 @@ class AsyncClient<RpcServiceMethodConcept,
     response_reader_->Finish(&response_, &status_, (void*)&finish_event_);
   }
 
-  void HandleEvent(const ClientEvent& client_event) override {
+  void HandleEvent(const CompletionQueue::ClientEvent& client_event) override {
     switch (client_event.event) {
-      case ClientEvent::Event::FINISH:
+      case CompletionQueue::ClientEvent::Event::FINISH:
         HandleFinishEvent(client_event);
         break;
       default:
-        LOG(FATAL) << "Unhandled event type";
+        LOG(FATAL) << "Unhandled event type: " << (int)client_event.event;
     }
   }
 
-  void HandleFinishEvent(const ClientEvent& client_event) {
+  void HandleFinishEvent(const CompletionQueue::ClientEvent& client_event) {
     if (callback_) {
       callback_(status_, status_.ok() ? &response_ : nullptr);
     }
@@ -100,7 +104,7 @@ class AsyncClient<RpcServiceMethodConcept,
   const ::grpc::internal::RpcMethod rpc_method_;
   std::unique_ptr<::grpc::ClientAsyncResponseReader<ResponseType>>
       response_reader_;
-  ClientEvent finish_event_;
+  CompletionQueue::ClientEvent finish_event_;
   ::grpc::Status status_;
   ResponseType response_;
 };
@@ -123,9 +127,9 @@ class AsyncClient<RpcServiceMethodConcept,
         rpc_method_name_(RpcServiceMethod::MethodName()),
         rpc_method_(rpc_method_name_.c_str(), RpcServiceMethod::StreamType,
                     channel_),
-        write_event_(ClientEvent::Event::WRITE, this),
-        read_event_(ClientEvent::Event::READ, this),
-        finish_event_(ClientEvent::Event::FINISH, this) {}
+        write_event_(CompletionQueue::ClientEvent::Event::WRITE, this),
+        read_event_(CompletionQueue::ClientEvent::Event::READ, this),
+        finish_event_(CompletionQueue::ClientEvent::Event::FINISH, this) {}
 
   void WriteAsync(const RequestType& request) {
     // Start the call.
@@ -136,26 +140,27 @@ class AsyncClient<RpcServiceMethodConcept,
             /*start=*/true, (void*)&write_event_));
   }
 
-  void HandleEvent(const ClientEvent& client_event) override {
+  void HandleEvent(const CompletionQueue::ClientEvent& client_event) override {
     switch (client_event.event) {
-      case ClientEvent::Event::WRITE:
+      case CompletionQueue::ClientEvent::Event::WRITE:
         HandleWriteEvent(client_event);
         break;
-      case ClientEvent::Event::READ:
+      case CompletionQueue::ClientEvent::Event::READ:
         HandleReadEvent(client_event);
         break;
-      case ClientEvent::Event::FINISH:
+      case CompletionQueue::ClientEvent::Event::FINISH:
         HandleFinishEvent(client_event);
         break;
       default:
-        LOG(FATAL) << "Unhandled event type.";
+        LOG(FATAL) << "Unhandled event type: " << (int)client_event.event;
     }
   }
 
-  void HandleWriteEvent(const ClientEvent& client_event) {
+  void HandleWriteEvent(const CompletionQueue::ClientEvent& client_event) {
     if (!client_event.ok) {
-      LOG(ERROR) << "Write failed.";
-      ::grpc::Status status(::grpc::INTERNAL, "Write failed.");
+      LOG(ERROR) << "Write failed in async server streaming.";
+      ::grpc::Status status(::grpc::INTERNAL,
+                            "Write failed in async server streaming.");
       if (callback_) {
         callback_(status, nullptr);
         callback_ = nullptr;
@@ -168,7 +173,7 @@ class AsyncClient<RpcServiceMethodConcept,
     response_reader_->Read(&response_, (void*)&read_event_);
   }
 
-  void HandleReadEvent(const ClientEvent& client_event) {
+  void HandleReadEvent(const CompletionQueue::ClientEvent& client_event) {
     if (client_event.ok) {
       if (callback_) {
         callback_(::grpc::Status(), &response_);
@@ -181,15 +186,17 @@ class AsyncClient<RpcServiceMethodConcept,
     }
   }
 
-  void HandleFinishEvent(const ClientEvent& client_event) {
+  void HandleFinishEvent(const CompletionQueue::ClientEvent& client_event) {
     if (callback_) {
       if (!client_event.ok) {
-        LOG(ERROR) << "Finish failed.";
+        LOG(ERROR) << "Finish failed in async server streaming.";
       }
-      callback_(client_event.ok
-                    ? ::grpc::Status()
-                    : ::grpc::Status(::grpc::INTERNAL, "Finish failed"),
-                nullptr);
+      callback_(
+          client_event.ok
+              ? ::grpc::Status()
+              : ::grpc::Status(::grpc::INTERNAL,
+                               "Finish failed in async server streaming."),
+          nullptr);
       callback_ = nullptr;
     }
   }
@@ -202,9 +209,9 @@ class AsyncClient<RpcServiceMethodConcept,
   const std::string rpc_method_name_;
   const ::grpc::internal::RpcMethod rpc_method_;
   std::unique_ptr<::grpc::ClientAsyncReader<ResponseType>> response_reader_;
-  ClientEvent write_event_;
-  ClientEvent read_event_;
-  ClientEvent finish_event_;
+  CompletionQueue::ClientEvent write_event_;
+  CompletionQueue::ClientEvent read_event_;
+  CompletionQueue::ClientEvent finish_event_;
   ::grpc::Status status_;
   ResponseType response_;
   ::grpc::Status finish_status_;
@@ -212,4 +219,4 @@ class AsyncClient<RpcServiceMethodConcept,
 
 }  // namespace async_grpc
 
-#endif  // CPP_GRPC_ASYNC_CLIENT_H
+#endif  // ASYNC_GRPC_ASYNC_CLIENT_H

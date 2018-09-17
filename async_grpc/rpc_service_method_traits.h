@@ -3,6 +3,7 @@
 
 #include "async_grpc/type_traits.h"
 #include "google/protobuf/message.h"
+
 namespace async_grpc {
 
 DEFINE_HAS_SIGNATURE(has_service_method_name, T::MethodName,
