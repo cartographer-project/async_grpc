@@ -38,6 +38,8 @@ RetryStrategy CreateRetryStrategy(RetryIndicator retry_indicator,
                                   RetryDelayCalculator retry_delay_calculator);
 
 RetryIndicator CreateLimitedRetryIndicator(int max_attempts);
+RetryIndicator CreateLimitedRetryIndicator(
+    int max_attempts, const std::set<::grpc::StatusCode>& unrecoverable_codes);
 RetryIndicator CreateUnlimitedRetryIndicator();
 RetryIndicator CreateUnlimitedRetryIndicator(
     const std::set<::grpc::StatusCode> &unrecoverable_codes);
@@ -47,6 +49,11 @@ RetryDelayCalculator CreateConstantDelayCalculator(Duration delay);
 RetryStrategy CreateLimitedBackoffStrategy(Duration min_delay,
                                            float backoff_factor,
                                            int max_attempts);
+RetryStrategy CreateLimitedConstantDelayStrategy(Duration delay,
+                                                 int max_attempts);
+RetryStrategy CreateLimitedConstantDelayStrategy(
+    Duration delay, int max_attempts,
+    const std::set<::grpc::StatusCode>& unrecoverable_codes);
 RetryStrategy CreateUnlimitedConstantDelayStrategy(Duration delay);
 RetryStrategy CreateUnlimitedConstantDelayStrategy(
     Duration delay, const std::set<::grpc::StatusCode> &unrecoverable_codes);
