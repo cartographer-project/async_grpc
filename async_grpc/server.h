@@ -36,7 +36,7 @@
 namespace async_grpc {
 namespace {
 
-constexpr int kDefaultMaxMessageSize = 10 * 1024 * 1024;  // 10 MB
+constexpr int kDefaultMaxMessageSize = 10 * 1024 * 1024;    // 10 MB
 constexpr double kDefaultTracingSamplerProbability = 0.01;  // 1 Percent
 
 }  // namespace

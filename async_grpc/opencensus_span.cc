@@ -37,7 +37,8 @@ void OpencensusSpan::End() { span_.End(); }
 
 OpencensusSpan::OpencensusSpan(const std::string& name,
                                const OpencensusSpan* parent)
-    : span_(opencensus::trace::Span::StartSpan(name, parent ? &parent->span_: nullptr)) {}
+    : span_(opencensus::trace::Span::StartSpan(
+          name, parent ? &parent->span_ : nullptr)) {}
 
 }  // namespace async_grpc
 

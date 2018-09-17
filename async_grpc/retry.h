@@ -29,9 +29,9 @@ using common::Duration;
 using common::optional;
 
 using RetryStrategy = std::function<optional<Duration>(
-    int /* failed_attempts */, const ::grpc::Status &)>;
+    int /* failed_attempts */, const ::grpc::Status&)>;
 using RetryIndicator =
-    std::function<bool(int /* failed_attempts */, const ::grpc::Status &)>;
+    std::function<bool(int /* failed_attempts */, const ::grpc::Status&)>;
 using RetryDelayCalculator = std::function<Duration(int /* failed_attempts */)>;
 
 RetryStrategy CreateRetryStrategy(RetryIndicator retry_indicator,
@@ -40,7 +40,7 @@ RetryStrategy CreateRetryStrategy(RetryIndicator retry_indicator,
 RetryIndicator CreateLimitedRetryIndicator(int max_attempts);
 RetryIndicator CreateUnlimitedRetryIndicator();
 RetryIndicator CreateUnlimitedRetryIndicator(
-    const std::set<::grpc::StatusCode> &unrecoverable_codes);
+    const std::set<::grpc::StatusCode>& unrecoverable_codes);
 RetryDelayCalculator CreateBackoffDelayCalculator(Duration min_delay,
                                                   float backoff_factor);
 RetryDelayCalculator CreateConstantDelayCalculator(Duration delay);
@@ -49,7 +49,7 @@ RetryStrategy CreateLimitedBackoffStrategy(Duration min_delay,
                                            int max_attempts);
 RetryStrategy CreateUnlimitedConstantDelayStrategy(Duration delay);
 RetryStrategy CreateUnlimitedConstantDelayStrategy(
-    Duration delay, const std::set<::grpc::StatusCode> &unrecoverable_codes);
+    Duration delay, const std::set<::grpc::StatusCode>& unrecoverable_codes);
 
 bool RetryWithStrategy(RetryStrategy retry_strategy,
                        std::function<::grpc::Status()> op,
