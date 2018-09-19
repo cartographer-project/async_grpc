@@ -29,6 +29,7 @@ find_package(GMock REQUIRED)
 find_package(Protobuf 3.0.0 REQUIRED)
 
 set(ALL_LIBRARY_HDRS
+    async_grpc/async_client.h
     async_grpc/client.h
     async_grpc/common/blocking_queue.h
     async_grpc/common/make_unique.h
@@ -36,6 +37,7 @@ set(ALL_LIBRARY_HDRS
     async_grpc/common/optional.h
     async_grpc/common/port.h
     async_grpc/common/time.h
+    async_grpc/completion_queue_pool.h
     async_grpc/completion_queue_thread.h
     async_grpc/event_queue_thread.h
     async_grpc/execution_context.h
@@ -52,6 +54,7 @@ set(ALL_LIBRARY_HDRS
 
 set(ALL_LIBRARY_SRCS
     async_grpc/common/time.cc
+    async_grpc/completion_queue_pool.cc
     async_grpc/completion_queue_thread.cc
     async_grpc/event_queue_thread.cc
     async_grpc/retry.cc
