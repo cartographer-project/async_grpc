@@ -17,6 +17,8 @@
 set -o errexit
 set -o verbose
 
+BAZEL_VERSION=0.20.0
+
 # Install the required libraries that are available as debs.
 sudo apt-get update
 sudo apt-get install -y \
@@ -27,7 +29,7 @@ sudo apt-get install -y \
     zlib1g-dev \
     unzip \
     python
-wget https://github.com/bazelbuild/bazel/releases/download/0.9.0/bazel-0.9.0-installer-linux-x86_64.sh
-chmod +x bazel-0.9.0-installer-linux-x86_64.sh
-./bazel-0.9.0-installer-linux-x86_64.sh
+wget https://github.com/bazelbuild/bazel/releases/download/${BAZEL_VERSION}/bazel-${BAZEL_VERSION}-installer-linux-x86_64.sh
+chmod +x bazel-${BAZEL_VERSION}-installer-linux-x86_64.sh
+./bazel-${BAZEL_VERSION}-installer-linux-x86_64.sh
 export PATH="$PATH:$HOME/bin"
