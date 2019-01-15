@@ -48,6 +48,7 @@ set(ALL_LIBRARY_HDRS
     async_grpc/rpc_service_method_traits.h
     async_grpc/server.h
     async_grpc/service.h
+    async_grpc/span.h
     async_grpc/testing/rpc_handler_test_server.h
     async_grpc/testing/rpc_handler_wrapper.h
     async_grpc/type_traits.h)
