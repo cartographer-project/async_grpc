@@ -194,7 +194,7 @@ class Server {
   Server& operator=(const Server&) = delete;
   void RunCompletionQueue(::grpc::ServerCompletionQueue* completion_queue);
   void RunEventQueue(Rpc::EventQueue* event_queue);
-  Rpc::EventQueue* SelectNextEventQueueRoundRobin();
+  Rpc::EventQueue* SelectNextEventQueue();
 
   Options options_;
 
@@ -209,8 +209,6 @@ class Server {
 
   // Threads processing RPC events.
   std::vector<EventQueueThread> event_queue_threads_;
-  common::Mutex current_event_queue_id_lock_;
-  int current_event_queue_id_ = 0;
 
   // Map of service names to services.
   std::map<std::string, Service> services_;

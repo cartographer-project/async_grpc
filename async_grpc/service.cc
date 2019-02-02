@@ -38,15 +38,27 @@ Service::Service(const std::string& service_name,
 }
 
 void Service::StartServing(
+    const std::vector<EventQueueThread>& event_queue_threads,
     std::vector<CompletionQueueThread>& completion_queue_threads,
     ExecutionContext* execution_context) {
+  CHECK(active_rpcs_.empty());
   int i = 0;
+
+  for (const auto& event_queue_thread : event_queue_threads) {
+    const auto* event_queue = event_queue_thread.event_queue();
+    // TODO(cschuet): Prettify.
+    active_rpcs_[event_queue];
+    LOG(INFO) << "Creating ActiveRpcs";
+  }
+
   for (const auto& rpc_handler_info : rpc_handler_infos_) {
     for (auto& completion_queue_thread : completion_queue_threads) {
-      std::shared_ptr<Rpc> rpc = active_rpcs_.Add(common::make_unique<Rpc>(
+      EventQueue* event_queue = event_queue_selector_();
+      auto& active_rpcs = active_rpcs_.at(event_queue);
+      std::shared_ptr<Rpc> rpc = active_rpcs.Add(common::make_unique<Rpc>(
           i, completion_queue_thread.completion_queue(),
           event_queue_selector_(), execution_context, rpc_handler_info.second,
-          this, active_rpcs_.GetWeakPtrFactory()));
+          this, active_rpcs.GetWeakPtrFactory()));
       rpc->RequestNextMethodInvocation();
     }
     ++i;
@@ -81,13 +93,13 @@ void Service::HandleNewConnection(Rpc* rpc, bool ok) {
     if (ok) {
       LOG(WARNING) << "Server shutting down. Refusing to handle new RPCs.";
     }
-    active_rpcs_.Remove(rpc);
+    active_rpcs_.at(rpc->event_queue()).Remove(rpc);
     return;
   }
 
   if (!ok) {
     LOG(ERROR) << "Failed to establish connection for unknown reason.";
-    active_rpcs_.Remove(rpc);
+    active_rpcs_.at(rpc->event_queue()).Remove(rpc);
   }
 
   if (ok) {
@@ -97,8 +109,11 @@ void Service::HandleNewConnection(Rpc* rpc, bool ok) {
   // Create new active rpc to handle next connection and register it for the
   // incoming connection. Assign event queue in a round-robin fashion.
   std::unique_ptr<Rpc> new_rpc = rpc->Clone();
-  new_rpc->SetEventQueue(event_queue_selector_());
-  active_rpcs_.Add(std::move(new_rpc))->RequestNextMethodInvocation();
+  auto* next_event_queue = event_queue_selector_();
+  new_rpc->SetEventQueue(next_event_queue);
+  active_rpcs_.at(next_event_queue)
+      .Add(std::move(new_rpc))
+      ->RequestNextMethodInvocation();
 }
 
 void Service::HandleRead(Rpc* rpc, bool ok) {
@@ -139,7 +154,7 @@ void Service::HandleDone(Rpc* rpc, bool ok) { RemoveIfNotPending(rpc); }
 
 void Service::RemoveIfNotPending(Rpc* rpc) {
   if (!rpc->IsAnyEventPending()) {
-    active_rpcs_.Remove(rpc);
+    active_rpcs_.at(rpc->event_queue()).Remove(rpc);
   }
 }
 

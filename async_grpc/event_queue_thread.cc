@@ -27,6 +27,10 @@ EventQueueThread::EventQueueThread() {
 
 EventQueue* EventQueueThread::event_queue() { return event_queue_.get(); }
 
+const EventQueue* EventQueueThread::event_queue() const {
+  return event_queue_.get();
+}
+
 void EventQueueThread::Start(EventQueueRunner runner) {
   CHECK(!thread_);
   EventQueue* event_queue = event_queue_.get();

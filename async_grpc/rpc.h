@@ -120,6 +120,7 @@ class Rpc {
   bool IsRpcEventPending(Event event);
   bool IsAnyEventPending();
   void SetEventQueue(EventQueue* event_queue) { event_queue_ = event_queue; }
+  const EventQueue* event_queue() const { return event_queue_; }
   EventQueue* event_queue() { return event_queue_; }
   std::weak_ptr<Rpc> GetWeakPtr();
   RpcHandlerInterface* handler() { return handler_.get(); }
@@ -202,7 +203,6 @@ class ActiveRpcs {
  private:
   std::weak_ptr<Rpc> GetWeakPtr(Rpc* rpc);
 
-  common::Mutex lock_;
   std::map<Rpc*, std::shared_ptr<Rpc>> rpcs_;
 };
 

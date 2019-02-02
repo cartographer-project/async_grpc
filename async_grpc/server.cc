@@ -125,7 +125,7 @@ void Server::AddService(
   const auto result = services_.emplace(
       std::piecewise_construct, std::make_tuple(service_name),
       std::make_tuple(service_name, rpc_handler_infos,
-                      [this]() { return SelectNextEventQueueRoundRobin(); }));
+                      [this]() { return SelectNextEventQueue(); }));
   CHECK(result.second) << "A service named " << service_name
                        << " already exists.";
   server_builder_.RegisterService(&result.first->second);
@@ -142,11 +142,9 @@ void Server::RunCompletionQueue(
   }
 }
 
-EventQueue* Server::SelectNextEventQueueRoundRobin() {
-  common::MutexLocker locker(&current_event_queue_id_lock_);
-  current_event_queue_id_ =
-      (current_event_queue_id_ + 1) % options_.num_event_threads;
-  return event_queue_threads_.at(current_event_queue_id_).event_queue();
+EventQueue* Server::SelectNextEventQueue() {
+  return event_queue_threads_.at(rand() % event_queue_threads_.size())
+      .event_queue();
 }
 
 void Server::RunEventQueue(EventQueue* event_queue) {
@@ -184,7 +182,7 @@ void Server::Start() {
 
   // Start serving all services on all completion queues.
   for (auto& service : services_) {
-    service.second.StartServing(completion_queue_threads_,
+    service.second.StartServing(event_queue_threads_, completion_queue_threads_,
                                 execution_context_.get());
   }
 
