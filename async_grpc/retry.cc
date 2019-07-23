@@ -14,11 +14,12 @@
  * limitations under the License.
  */
 
+#include "async_grpc/retry.h"
+
 #include <chrono>
 #include <cmath>
 #include <thread>
 
-#include "async_grpc/retry.h"
 #include "glog/logging.h"
 
 namespace async_grpc {
@@ -26,7 +27,7 @@ namespace async_grpc {
 RetryStrategy CreateRetryStrategy(RetryIndicator retry_indicator,
                                   RetryDelayCalculator retry_delay_calculator) {
   return [retry_indicator, retry_delay_calculator](
-      int failed_attempts, const ::grpc::Status &status) {
+             int failed_attempts, const ::grpc::Status& status) {
     if (!retry_indicator(failed_attempts, status)) {
       return optional<Duration>();
     }
@@ -35,19 +36,19 @@ RetryStrategy CreateRetryStrategy(RetryIndicator retry_indicator,
 }
 
 RetryIndicator CreateLimitedRetryIndicator(int max_attempts) {
-  return [max_attempts](int failed_attempts, const ::grpc::Status &status) {
+  return [max_attempts](int failed_attempts, const ::grpc::Status& status) {
     return failed_attempts < max_attempts;
   };
 }
 
 RetryIndicator CreateUnlimitedRetryIndicator() {
-  return [](int failed_attempts, const ::grpc::Status &status) { return true; };
+  return [](int failed_attempts, const ::grpc::Status& status) { return true; };
 }
 
 RetryIndicator CreateUnlimitedRetryIndicator(
-    const std::set<::grpc::StatusCode> &unrecoverable_codes) {
+    const std::set<::grpc::StatusCode>& unrecoverable_codes) {
   return
-      [unrecoverable_codes](int failed_attempts, const ::grpc::Status &status) {
+      [unrecoverable_codes](int failed_attempts, const ::grpc::Status& status) {
         return unrecoverable_codes.count(status.error_code()) <= 0;
       };
 }
@@ -81,7 +82,7 @@ RetryStrategy CreateUnlimitedConstantDelayStrategy(Duration delay) {
 }
 
 RetryStrategy CreateUnlimitedConstantDelayStrategy(
-    Duration delay, const std::set<::grpc::StatusCode> &unrecoverable_codes) {
+    Duration delay, const std::set<::grpc::StatusCode>& unrecoverable_codes) {
   return CreateRetryStrategy(CreateUnlimitedRetryIndicator(unrecoverable_codes),
                              CreateConstantDelayCalculator(delay));
 }
