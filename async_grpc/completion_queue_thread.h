@@ -18,6 +18,7 @@
 #define CPP_GRPC_COMMON_COMPLETION_QUEUE_THREAD_H_
 
 #include <grpc++/grpc++.h>
+
 #include <memory>
 #include <thread>
 

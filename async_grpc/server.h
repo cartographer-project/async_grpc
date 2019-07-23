@@ -30,7 +30,6 @@
 #include "async_grpc/rpc_handler.h"
 #include "async_grpc/rpc_service_method_traits.h"
 #include "async_grpc/service.h"
-
 #include "grpc++/grpc++.h"
 
 namespace async_grpc {
