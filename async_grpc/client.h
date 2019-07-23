@@ -21,13 +21,11 @@
 #include "async_grpc/retry.h"
 #include "async_grpc/rpc_handler_interface.h"
 #include "async_grpc/rpc_service_method_traits.h"
-
+#include "glog/logging.h"
 #include "grpc++/grpc++.h"
 #include "grpc++/impl/codegen/client_unary_call.h"
 #include "grpc++/impl/codegen/proto_utils.h"
 #include "grpc++/impl/codegen/sync_stream.h"
-
-#include "glog/logging.h"
 
 namespace async_grpc {
 

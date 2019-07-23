@@ -14,11 +14,12 @@
  * limitations under the License.
  */
 
+#include "async_grpc/retry.h"
+
 #include <chrono>
 #include <cmath>
 #include <thread>
 
-#include "async_grpc/retry.h"
 #include "glog/logging.h"
 
 namespace async_grpc {
@@ -26,7 +27,7 @@ namespace async_grpc {
 RetryStrategy CreateRetryStrategy(RetryIndicator retry_indicator,
                                   RetryDelayCalculator retry_delay_calculator) {
   return [retry_indicator, retry_delay_calculator](
-      int failed_attempts, const ::grpc::Status &status) {
+             int failed_attempts, const ::grpc::Status &status) {
     if (!retry_indicator(failed_attempts, status)) {
       return optional<Duration>();
     }
@@ -40,6 +41,15 @@ RetryIndicator CreateLimitedRetryIndicator(int max_attempts) {
   };
 }
 
+RetryIndicator CreateLimitedRetryIndicator(
+    int max_attempts, const std::set<::grpc::StatusCode> &unrecoverable_codes) {
+  return [max_attempts, unrecoverable_codes](int failed_attempts,
+                                             const ::grpc::Status &status) {
+    return (failed_attempts < max_attempts) &&
+           !unrecoverable_codes.count(status.error_code());
+  };
+}
+
 RetryIndicator CreateUnlimitedRetryIndicator() {
   return [](int failed_attempts, const ::grpc::Status &status) { return true; };
 }
@@ -48,7 +58,7 @@ RetryIndicator CreateUnlimitedRetryIndicator(
     const std::set<::grpc::StatusCode> &unrecoverable_codes) {
   return
       [unrecoverable_codes](int failed_attempts, const ::grpc::Status &status) {
-        return unrecoverable_codes.count(status.error_code()) <= 0;
+        return !unrecoverable_codes.count(status.error_code());
       };
 }
 
@@ -78,6 +88,20 @@ RetryStrategy CreateLimitedBackoffStrategy(Duration min_delay,
 RetryStrategy CreateUnlimitedConstantDelayStrategy(Duration delay) {
   return CreateRetryStrategy(CreateUnlimitedRetryIndicator(),
                              CreateConstantDelayCalculator(delay));
+}
+
+RetryStrategy CreateLimitedConstantDelayStrategy(Duration delay,
+                                                 int max_attempts) {
+  return CreateRetryStrategy(CreateLimitedRetryIndicator(max_attempts),
+                             CreateConstantDelayCalculator(delay));
+}
+
+RetryStrategy CreateLimitedConstantDelayStrategy(
+    Duration delay, int max_attempts,
+    const std::set<::grpc::StatusCode> &unrecoverable_codes) {
+  return CreateRetryStrategy(
+      CreateLimitedRetryIndicator(max_attempts, unrecoverable_codes),
+      CreateConstantDelayCalculator(delay));
 }
 
 RetryStrategy CreateUnlimitedConstantDelayStrategy(
