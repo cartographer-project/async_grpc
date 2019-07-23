@@ -14,11 +14,12 @@
  * limitations under the License.
  */
 
+#include "async_grpc/retry.h"
+
 #include <chrono>
 #include <cmath>
 #include <thread>
 
-#include "async_grpc/retry.h"
 #include "glog/logging.h"
 
 namespace async_grpc {
@@ -26,7 +27,7 @@ namespace async_grpc {
 RetryStrategy CreateRetryStrategy(RetryIndicator retry_indicator,
                                   RetryDelayCalculator retry_delay_calculator) {
   return [retry_indicator, retry_delay_calculator](
-      int failed_attempts, const ::grpc::Status &status) {
+             int failed_attempts, const ::grpc::Status &status) {
     if (!retry_indicator(failed_attempts, status)) {
       return optional<Duration>();
     }

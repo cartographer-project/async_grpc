@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 
+#include "async_grpc/completion_queue_pool.h"
+
 #include <cstdlib>
 
 #include "async_grpc/async_client.h"
-#include "async_grpc/completion_queue_pool.h"
 #include "common/make_unique.h"
 #include "glog/logging.h"
 
@@ -89,8 +90,7 @@ void CompletionQueuePool::Shutdown() {
 }
 
 CompletionQueuePool::CompletionQueuePool()
-    : number_completion_queues_(kDefaultNumberCompletionQueues) {
-}
+    : number_completion_queues_(kDefaultNumberCompletionQueues) {}
 
 CompletionQueuePool::~CompletionQueuePool() {
   LOG(INFO) << "~CompletionQueuePool";

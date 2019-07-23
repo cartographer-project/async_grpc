@@ -15,9 +15,9 @@
  */
 
 #include "async_grpc/rpc.h"
-#include "async_grpc/service.h"
 
 #include "async_grpc/common/make_unique.h"
+#include "async_grpc/service.h"
 #include "glog/logging.h"
 
 namespace async_grpc {
