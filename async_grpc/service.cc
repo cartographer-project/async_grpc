@@ -14,10 +14,9 @@
  * limitations under the License.
  */
 
-#include "async_grpc/server.h"
-
 #include <cstdlib>
 
+#include "async_grpc/server.h"
 #include "glog/logging.h"
 #include "grpc++/impl/codegen/proto_utils.h"
 
