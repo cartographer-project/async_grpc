@@ -15,9 +15,9 @@
  */
 
 #include "async_grpc/rpc.h"
-#include "async_grpc/service.h"
 
 #include "async_grpc/common/make_unique.h"
+#include "async_grpc/service.h"
 #include "glog/logging.h"
 
 namespace async_grpc {
@@ -320,8 +320,6 @@ bool Rpc::IsAnyEventPending() {
 
 std::weak_ptr<Rpc> Rpc::GetWeakPtr() { return weak_ptr_factory_(this); }
 
-ActiveRpcs::ActiveRpcs() : lock_() {}
-
 void Rpc::InitializeReadersAndWriters(
     ::grpc::internal::RpcMethod::RpcType rpc_type) {
   switch (rpc_type) {
@@ -349,15 +347,15 @@ void Rpc::InitializeReadersAndWriters(
   }
 }
 
+ActiveRpcs::ActiveRpcs() {}
+
 ActiveRpcs::~ActiveRpcs() {
-  common::MutexLocker locker(&lock_);
   if (!rpcs_.empty()) {
     LOG(FATAL) << "RPCs still in flight!";
   }
 }
 
 std::shared_ptr<Rpc> ActiveRpcs::Add(std::unique_ptr<Rpc> rpc) {
-  common::MutexLocker locker(&lock_);
   std::shared_ptr<Rpc> shared_ptr_rpc = std::move(rpc);
   const auto result = rpcs_.emplace(shared_ptr_rpc.get(), shared_ptr_rpc);
   CHECK(result.second) << "RPC already active.";
@@ -365,7 +363,6 @@ std::shared_ptr<Rpc> ActiveRpcs::Add(std::unique_ptr<Rpc> rpc) {
 }
 
 bool ActiveRpcs::Remove(Rpc* rpc) {
-  common::MutexLocker locker(&lock_);
   auto it = rpcs_.find(rpc);
   if (it != rpcs_.end()) {
     rpcs_.erase(it);
@@ -379,7 +376,6 @@ Rpc::WeakPtrFactory ActiveRpcs::GetWeakPtrFactory() {
 }
 
 std::weak_ptr<Rpc> ActiveRpcs::GetWeakPtr(Rpc* rpc) {
-  common::MutexLocker locker(&lock_);
   auto it = rpcs_.find(rpc);
   CHECK(it != rpcs_.end());
   return it->second;

@@ -30,13 +30,12 @@
 #include "async_grpc/rpc_handler.h"
 #include "async_grpc/rpc_service_method_traits.h"
 #include "async_grpc/service.h"
-
 #include "grpc++/grpc++.h"
 
 namespace async_grpc {
 namespace {
 
-constexpr int kDefaultMaxMessageSize = 10 * 1024 * 1024;  // 10 MB
+constexpr int kDefaultMaxMessageSize = 10 * 1024 * 1024;    // 10 MB
 constexpr double kDefaultTracingSamplerProbability = 0.01;  // 1 Percent
 
 }  // namespace
@@ -194,7 +193,7 @@ class Server {
   Server& operator=(const Server&) = delete;
   void RunCompletionQueue(::grpc::ServerCompletionQueue* completion_queue);
   void RunEventQueue(Rpc::EventQueue* event_queue);
-  Rpc::EventQueue* SelectNextEventQueueRoundRobin();
+  Rpc::EventQueue* SelectNextEventQueue();
 
   Options options_;
 
@@ -209,8 +208,6 @@ class Server {
 
   // Threads processing RPC events.
   std::vector<EventQueueThread> event_queue_threads_;
-  common::Mutex current_event_queue_id_lock_;
-  int current_event_queue_id_ = 0;
 
   // Map of service names to services.
   std::map<std::string, Service> services_;

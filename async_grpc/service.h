@@ -17,6 +17,8 @@
 #ifndef CPP_GRPC_SERVICE_H
 #define CPP_GRPC_SERVICE_H
 
+#include <unordered_map>
+
 #include "async_grpc/completion_queue_thread.h"
 #include "async_grpc/event_queue_thread.h"
 #include "async_grpc/execution_context.h"
@@ -38,7 +40,8 @@ class Service : public ::grpc::Service {
   Service(const std::string& service_name,
           const std::map<std::string, RpcHandlerInfo>& rpc_handlers,
           EventQueueSelector event_queue_selector);
-  void StartServing(std::vector<CompletionQueueThread>& completion_queues,
+  void StartServing(const std::vector<EventQueueThread>& event_queue_threads,
+                    std::vector<CompletionQueueThread>& completion_queues,
                     ExecutionContext* execution_context);
   void HandleEvent(Rpc::Event event, Rpc* rpc, bool ok);
   void StopServing();
@@ -54,7 +57,7 @@ class Service : public ::grpc::Service {
 
   std::map<std::string, RpcHandlerInfo> rpc_handler_infos_;
   EventQueueSelector event_queue_selector_;
-  ActiveRpcs active_rpcs_;
+  std::unordered_map<const EventQueue*, ActiveRpcs> active_rpcs_;
   bool shutting_down_ = false;
 };
 

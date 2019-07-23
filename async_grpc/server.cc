@@ -46,12 +46,14 @@ void Server::Builder::SetServerAddress(const std::string& server_address) {
 }
 
 void Server::Builder::SetMaxReceiveMessageSize(int max_receive_message_size) {
-  CHECK_GT(max_receive_message_size, 0) << "max_receive_message_size must be larger than 0.";
+  CHECK_GT(max_receive_message_size, 0)
+      << "max_receive_message_size must be larger than 0.";
   options_.max_receive_message_size = max_receive_message_size;
 }
 
 void Server::Builder::SetMaxSendMessageSize(int max_send_message_size) {
-  CHECK_GT(max_send_message_size, 0) << "max_send_message_size must be larger than 0.";
+  CHECK_GT(max_send_message_size, 0)
+      << "max_send_message_size must be larger than 0.";
   options_.max_send_message_size = max_send_message_size;
 }
 
@@ -63,11 +65,10 @@ void Server::Builder::EnableTracing() {
 #endif
 }
 
-void Server::Builder::DisableTracing() {
-  options_.enable_tracing = false;
-}
+void Server::Builder::DisableTracing() { options_.enable_tracing = false; }
 
-void Server::Builder::SetTracingSamplerProbability(double tracing_sampler_probability) {
+void Server::Builder::SetTracingSamplerProbability(
+    double tracing_sampler_probability) {
   options_.tracing_sampler_probability = tracing_sampler_probability;
 }
 
@@ -75,7 +76,8 @@ void Server::Builder::SetTracingTaskName(const std::string& tracing_task_name) {
   options_.tracing_task_name = tracing_task_name;
 }
 
-void Server::Builder::SetTracingGcpProjectId(const std::string& tracing_gcp_project_id) {
+void Server::Builder::SetTracingGcpProjectId(
+    const std::string& tracing_gcp_project_id) {
   options_.tracing_gcp_project_id = tracing_gcp_project_id;
 }
 
@@ -125,7 +127,7 @@ void Server::AddService(
   const auto result = services_.emplace(
       std::piecewise_construct, std::make_tuple(service_name),
       std::make_tuple(service_name, rpc_handler_infos,
-                      [this]() { return SelectNextEventQueueRoundRobin(); }));
+                      [this]() { return SelectNextEventQueue(); }));
   CHECK(result.second) << "A service named " << service_name
                        << " already exists.";
   server_builder_.RegisterService(&result.first->second);
@@ -142,11 +144,9 @@ void Server::RunCompletionQueue(
   }
 }
 
-EventQueue* Server::SelectNextEventQueueRoundRobin() {
-  common::MutexLocker locker(&current_event_queue_id_lock_);
-  current_event_queue_id_ =
-      (current_event_queue_id_ + 1) % options_.num_event_threads;
-  return event_queue_threads_.at(current_event_queue_id_).event_queue();
+EventQueue* Server::SelectNextEventQueue() {
+  return event_queue_threads_.at(rand() % event_queue_threads_.size())
+      .event_queue();
 }
 
 void Server::RunEventQueue(EventQueue* event_queue) {
@@ -178,13 +178,12 @@ void Server::Start() {
   }
 #endif
 
-
   // Start the gRPC server process.
   server_ = server_builder_.BuildAndStart();
 
   // Start serving all services on all completion queues.
   for (auto& service : services_) {
-    service.second.StartServing(completion_queue_threads_,
+    service.second.StartServing(event_queue_threads_, completion_queue_threads_,
                                 execution_context_.get());
   }
 

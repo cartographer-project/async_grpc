@@ -32,6 +32,7 @@ class EventQueueThread {
   EventQueueThread();
 
   EventQueue* event_queue();
+  const EventQueue* event_queue() const;
 
   void Start(EventQueueRunner runner);
   void Shutdown();
