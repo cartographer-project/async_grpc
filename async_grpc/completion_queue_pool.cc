@@ -38,7 +38,9 @@ void CompletionQueue::Shutdown() {
   CHECK(thread_) << "CompletionQueue not yet started.";
   LOG(INFO) << "Shutting down client completion queue " << this;
   completion_queue_.Shutdown();
-  thread_->join();
+  if (thread_->joinable()) {
+    thread_->join();
+  }
 }
 
 void CompletionQueue::RunCompletionQueue() {

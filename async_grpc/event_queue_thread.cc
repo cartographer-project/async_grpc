@@ -36,7 +36,9 @@ void EventQueueThread::Start(EventQueueRunner runner) {
 
 void EventQueueThread::Shutdown() {
   LOG(INFO) << "Shutting down event queue " << event_queue_.get();
-  thread_->join();
+  if (thread_->joinable()) {
+    thread_->join();
+  }
 }
 
 }  // namespace async_grpc
