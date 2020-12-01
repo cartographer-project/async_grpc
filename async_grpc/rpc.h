@@ -111,6 +111,7 @@ class Rpc {
   void OnRequest();
   void OnReadsDone();
   void OnFinish();
+  void OnServerShutdown();
   void RequestNextMethodInvocation();
   void RequestStreamingReadIfNeeded();
   void HandleSendQueue();
@@ -198,6 +199,7 @@ class ActiveRpcs {
   std::shared_ptr<Rpc> Add(std::unique_ptr<Rpc> rpc) EXCLUDES(lock_);
   bool Remove(Rpc* rpc) EXCLUDES(lock_);
   Rpc::WeakPtrFactory GetWeakPtrFactory();
+  void Shutdown();
 
  private:
   std::weak_ptr<Rpc> GetWeakPtr(Rpc* rpc);

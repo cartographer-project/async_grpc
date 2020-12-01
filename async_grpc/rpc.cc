@@ -102,6 +102,12 @@ void Rpc::OnReadsDone() { handler_->OnReadsDone(); }
 
 void Rpc::OnFinish() { handler_->OnFinish(); }
 
+void Rpc::OnServerShutdown() {
+  if (handler_) {
+    handler_->OnServerShutdown();
+  }
+}
+
 void Rpc::RequestNextMethodInvocation() {
   // Ask gRPC to notify us when the connection terminates.
   SetRpcEventState(Event::DONE, true);
@@ -383,6 +389,13 @@ std::weak_ptr<Rpc> ActiveRpcs::GetWeakPtr(Rpc* rpc) {
   auto it = rpcs_.find(rpc);
   CHECK(it != rpcs_.end());
   return it->second;
+}
+
+void ActiveRpcs::Shutdown() {
+  common::MutexLocker locker(&lock_);
+  for (auto it : rpcs_) {
+    it.second->OnServerShutdown();
+  }
 }
 
 }  // namespace async_grpc

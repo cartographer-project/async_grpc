@@ -36,6 +36,7 @@ class RpcHandlerInterface {
       const ::google::protobuf::Message* request) = 0;
   virtual void OnReadsDone(){};
   virtual void OnFinish(){};
+  virtual void OnServerShutdown(){};
   virtual Span* trace_span() = 0;
   template <class RpcHandlerType>
   static std::unique_ptr<RpcHandlerType> Instantiate() {

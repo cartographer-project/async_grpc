@@ -53,7 +53,10 @@ void Service::StartServing(
   }
 }
 
-void Service::StopServing() { shutting_down_ = true; }
+void Service::StopServing() {
+  active_rpcs_.Shutdown();
+  shutting_down_ = true;
+}
 
 void Service::HandleEvent(Rpc::Event event, Rpc* rpc, bool ok) {
   switch (event) {
